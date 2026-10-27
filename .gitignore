@@ -1,0 +1,25 @@
+# Dependencies and build outputs
+node_modules/
+.next/
+out/
+dist/
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# Local runtime data
+data/app.db
+data/app.db-*
+data/assets/**
+data/backups/**
+!data/assets/.gitkeep
+!data/backups/.gitkeep
+
+# Logs and OS/editor files
+*.log
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
