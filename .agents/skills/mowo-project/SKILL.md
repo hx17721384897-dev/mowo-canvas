@@ -23,6 +23,11 @@ Use the project root as the working directory. Start every task by reading `../.
 | Backup, recovery, upload, security | `../../../docs/11-security-and-backup.md` |
 | Evaluate or import a starter/template | `../../../docs/12-template-selection.md` |
 | Authentication, users, teams, permissions | `../../../docs/13-account-system-plan.md` |
+| Capture requirements or edit a PRD | `../../../docs/requirements/README.md`, then only the current PRD, open questions, or named feature |
+| Add or change an API or cross-layer contract | `../../../docs/api/README.md`, then only the named API document |
+| Prototype, screenshot, visual or interaction design | `../../../docs/design/README.md`, then only the named prototype |
+| Node.js, npm, scaffolding, or local engineering environment | `../../../docs/17-engineering-environment.md` |
+| Database MCP or direct AI database access | `../../../docs/18-database-mcp.md`, `../../../docs/11-security-and-backup.md` |
 | Explain why an accepted direction exists | `../../../docs/decisions/README.md`, then only the named ADR |
 
 Paths above are relative to this `SKILL.md`.
@@ -34,6 +39,7 @@ Paths above are relative to this `SKILL.md`.
 - Do not resurrect an abandoned option because it appears in Git history, logs, or archives.
 - Keep one authoritative location per rule; link instead of duplicating content.
 - If code and current docs disagree, inspect the code and relevant evidence, then resolve the mismatch before extending the design.
+- Put confirmed product behavior in the current PRD. Put incomplete information in open questions; never promote inference into a requirement.
 
 ## Change workflow
 
@@ -51,6 +57,8 @@ Paths above are relative to this `SKILL.md`.
 - Do not create ADRs for ordinary code changes; use them for accepted decisions with lasting consequences.
 - Keep `docs/logs/current.md` limited to the active iteration and observable verification.
 - Update `docs/07-file-map.md` only for maintained source or configuration structure, never generated files or user data.
+- When an API or cross-layer contract changes, update its API document in the same change.
+- Store current prototype screenshots under `docs/design/prototypes/`; confirmation, not the screenshot alone, promotes behavior into the PRD.
 
 ## Project boundaries
 

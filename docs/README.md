@@ -20,6 +20,11 @@
 | 备份、恢复或安全 | `11-security-and-backup.md` |
 | 选择或引入模板 | `12-template-selection.md` |
 | 登录、用户、权限 | `13-account-system-plan.md` |
+| 沉淀需求或编写 PRD | `requirements/README.md`，再读取当前 PRD 或指定功能需求 |
+| 创建或修改接口 | `api/README.md`，再读取对应接口文档 |
+| 原型、截图、视觉交互 | `design/README.md` |
+| Node.js、npm、脚手架或工程环境 | `17-engineering-environment.md` |
+| 数据库 MCP 或 AI 数据访问 | `18-database-mcp.md` |
 | 询问某项决定的原因 | `decisions/README.md`，再读取指定 ADR |
 | 追溯废弃方案 | 仅在用户明确要求时读取 `archive/README.md` |
 
@@ -33,6 +38,8 @@
 6. `CHANGELOG.md` 只记录进入稳定主线的结果。
 7. `logs/current.md` 只记录当前迭代；结束后压缩成结论，必要时移入归档。
 8. `archive/` 不属于默认上下文，不从主导航逐项列出历史内容。
+9. 已确认需求写入当前 PRD；未确认信息只进入开放问题，不伪装成最终需求。
+10. 接口行为变化必须同时更新对应 API 文档和验证用例。
 
 ## 文档状态
 

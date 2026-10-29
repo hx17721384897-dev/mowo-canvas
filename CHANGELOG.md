@@ -2,6 +2,21 @@
 
 这里只记录已接受并进入稳定主线的版本变化。实验过程、失败方案和未发布设计不写入本文件。
 
+## [0.2.0-engineering] - 2026-10-29
+
+### 新增
+
+- 使用官方 `create-next-app` 建立 Next.js、React、TypeScript、Tailwind 和 ESLint 工程基线。
+- 增加 Node.js、npm 版本约束和统一 `npm run check` 质量命令。
+- 增加当前 PRD、开放问题、API 契约、设计原型与截图的按需文档入口。
+- 增加工程环境审计和数据库 MCP 安全评估。
+- 扩展项目 Skill，使其按需求、API、设计、环境和 MCP 任务路由文档。
+
+### 验证
+
+- `npm ci`、Lint、路由类型生成、TypeScript 和生产构建通过。
+- 本地开发服务器与首页 HTTP 200 冒烟测试通过。
+
 ## [0.1.0-docs] - 2026-10-27
 
 ### 新增

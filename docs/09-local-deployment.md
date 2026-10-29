@@ -19,7 +19,13 @@ npm run build
 npm run start
 ```
 
-包管理器与最终命令在项目脚手架创建后确认并更新。本文现在不代表依赖已经安装。
+首次获取代码后使用 `npm ci` 按锁文件安装依赖。开发环境使用 Node.js 22；精确基线见 `.nvmrc`、`.node-version` 和 `package.json`。
+
+完整工程检查：
+
+```text
+npm run check
+```
 
 ## 本地数据
 

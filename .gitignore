@@ -3,6 +3,11 @@ node_modules/
 .next/
 out/
 dist/
+coverage/
+build/
+.vercel/
+*.tsbuildinfo
+next-env.d.ts
 
 # Environment and secrets
 .env
