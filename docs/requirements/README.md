@@ -6,6 +6,7 @@
 
 - 当前产品需求与验收标准：`current-prd.md`
 - 尚未确认、会影响设计的问题：`open-questions.md`
+- 产品统一术语：`../../GLOSSARY.md`
 - 某项功能需要独立说明时，在 `features/` 创建一个文件，并从当前 PRD 链接。
 
 ## 沉淀规则

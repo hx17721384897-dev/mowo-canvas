@@ -9,6 +9,7 @@
 | 任务 | 读取文档 |
 |---|---|
 | 理解产品目标 | `01-project-overview.md`、`02-product-scope.md` |
+| 理解产品术语 | `../GLOSSARY.md` |
 | 安排迭代 | `03-roadmap.md` |
 | 修改系统结构或依赖 | `04-architecture.md` |
 | 修改数据库、保存或素材 | `05-data-design.md` |
