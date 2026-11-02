@@ -6,5 +6,6 @@
 
 - `home-and-navigation.md`：首页、左侧导航、最近项目和历史项目。
 - `project-lifecycle.md`：项目创建、进入、保存边界和恢复。
-- `canvas-workspace.md`：画布布局、节点创建、连线和右侧对话。
+- `canvas-workspace.md`：画布布局、四区工具栏、节点创建、连线和右侧对话。
 - `skills-and-prompts.md`：技能管理入口、提示词模板与技能关联。
+- `settings-and-models.md`：设置入口、模型 API 管理和密钥安全边界。
