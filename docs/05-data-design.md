@@ -31,14 +31,37 @@
 ### Asset
 
 - `id`
-- `projectId`
 - `type`
 - `originalName`
-- `relativePath`
+- `relativePath`（文字资产可为空）
+- `textContent`（仅文字资产）
 - `mimeType`
 - `size`
 - `width`、`height`、`duration` 等可选元数据
+- `sourceType`
+- `sourceUrl`
+- `contentHash`
 - `createdAt`
+
+资产是可以跨画布重复使用的长期内容，不等同于画布节点。图片、动图和视频使用本地文件；文字内容直接进入结构化数据。删除画布节点不删除资产。
+
+### AssetCollection
+
+- `id`
+- `name`
+- `sourceType`
+- `sourceUrl`
+- `createdAt`
+
+集合保存同一来源或同一处理结果中的多个资产及其顺序，例如表情包、一次多视频下载或批量裁切结果。
+
+### ProjectAsset
+
+- `projectId`
+- `assetId`
+- `addedAt`
+
+项目通过关联记录使用全局资产，避免把同一物理文件复制到多个项目。
 
 ## 画布文档基线
 
