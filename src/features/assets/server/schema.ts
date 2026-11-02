@@ -53,3 +53,38 @@ export const assetCollectionItems = sqliteTable("asset_collection_items", {
   primaryKey({ columns: [table.collectionId, table.assetId] }),
   uniqueIndex("asset_collection_position_unique").on(table.collectionId, table.position),
 ]);
+
+export const downloadTasks = sqliteTable("download_tasks", {
+  id: text("id").primaryKey(),
+  projectId: text("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+  platform: text("platform", { enum: ["line"] }).notNull(),
+  sourceUrl: text("source_url").notNull(),
+  sourceKind: text("source_kind", { enum: ["sticker", "emoji"] }),
+  title: text("title"),
+  status: text("status", { enum: ["queued", "resolving", "downloading", "ready", "importing", "completed", "failed", "cancelled"] }).notNull(),
+  progress: integer("progress").notNull().default(0),
+  total: integer("total").notNull().default(0),
+  errorCode: text("error_code"),
+  errorMessage: text("error_message"),
+  createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
+  updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull(),
+}, (table) => [
+  index("download_tasks_project_id_index").on(table.projectId),
+  index("download_tasks_status_index").on(table.status),
+]);
+
+export const downloadItems = sqliteTable("download_items", {
+  id: text("id").primaryKey(),
+  taskId: text("task_id").notNull().references(() => downloadTasks.id, { onDelete: "cascade" }),
+  externalId: text("external_id").notNull(),
+  name: text("name").notNull(),
+  relativePath: text("relative_path").notNull(),
+  mimeType: text("mime_type").notNull(),
+  size: integer("size").notNull(),
+  animated: integer("animated", { mode: "boolean" }).notNull().default(false),
+  position: integer("position").notNull(),
+  createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
+}, (table) => [
+  uniqueIndex("download_items_task_position_unique").on(table.taskId, table.position),
+  index("download_items_task_id_index").on(table.taskId),
+]);

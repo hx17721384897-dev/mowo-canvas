@@ -67,12 +67,18 @@
 .urlBar > svg { width: 16px; height: 16px; }
 .urlBar input { min-width: 0; height: 42px; flex: 1; border: 0; outline: 0; font-size: 11px; }
 .urlBar button { align-self: stretch; min-width: 90px; border-radius: 9px; background: #6268ec; color: #fff; cursor: pointer; font-size: 11px; font-weight: 650; }
-.downloadNotice { margin: 9px 18px 0; padding: 8px 10px; border-radius: 8px; background: #fff7e8; color: #986a22; font-size: 10px; }
+.urlBar button:disabled { cursor: not-allowed; opacity: .55; }
+.downloadNotice { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 9px 18px 0; padding: 8px 10px; border-radius: 8px; background: #fff7e8; color: #986a22; font-size: 10px; }
+.downloadError { background: #fff0f0; color: #b04a4a; }
 .downloadBody { display: grid; min-height: 460px; grid-template-columns: 56% 44%; padding: 16px 18px; }
 .previewPane { padding-right: 18px; border-right: 1px solid #e8e9ef; }
 .previewStage { display: flex; height: 330px; align-items: center; justify-content: center; flex-direction: column; gap: 9px; border: 1px solid #e5e7ef; border-radius: 11px; background-color: #f7f8fb; background-image: linear-gradient(45deg, #ebecef 25%, transparent 25%), linear-gradient(-45deg, #ebecef 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #ebecef 75%), linear-gradient(-45deg, transparent 75%, #ebecef 75%); background-position: 0 0, 0 8px, 8px -8px, -8px 0; background-size: 16px 16px; color: #9a9eac; }
 .previewStage svg { width: 36px; height: 36px; }
 .previewStage span { padding: 6px 9px; border-radius: 6px; background: rgba(255,255,255,.84); font-size: 10px; }
+.previewStage img { object-fit: contain; }
+.previewStage canvas { width: 100%; height: 100%; object-fit: contain; }
+.previewStage .previewHidden { visibility: hidden; }
+.previewStage .animatedBadge { position: absolute; z-index: 2; right: 8px; bottom: 8px; background: rgba(31,34,48,.72); color: #fff; }
 .previewControls { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 12px; }
 .previewControls button { display: flex; height: 32px; align-items: center; gap: 4px; padding: 0 10px; border: 1px solid #e1e3eb; border-radius: 8px; background: #fff; font-size: 10px; }
 .previewControls button svg { width: 13px; height: 13px; }
@@ -90,6 +96,23 @@
 .thumbnailEmpty svg { width: 26px; height: 26px; }
 .thumbnailEmpty span { font-size: 10px; font-weight: 650; }
 .thumbnailEmpty small { font-size: 9px; }
+.thumbnailGrid { display: grid; max-height: 380px; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; padding: 3px; overflow-y: auto; }
+.thumbnailCard { position: relative; min-width: 0; padding: 4px; border: 1px solid #e4e6ed; border-radius: 8px; background: #fff; cursor: pointer; transition: opacity 140ms ease, border-color 140ms ease, transform 140ms ease; }
+.thumbnailCard:hover { transform: translateY(-1px); border-color: #bfc3f3; }
+.thumbnailActive { border-color: #6b70e8; box-shadow: 0 0 0 2px rgba(98,104,236,.12); }
+.thumbnailUnchecked { opacity: .32; filter: saturate(.25); }
+.thumbnailImage { position: relative; display: block; aspect-ratio: 1; overflow: hidden; border-radius: 6px; background: #f3f4f7; }
+.thumbnailImage img { object-fit: contain; }
+.thumbnailLabel { display: block; margin-top: 4px; overflow: hidden; color: #6f7483; font-size: 8px; text-overflow: ellipsis; white-space: nowrap; }
+.thumbnailCheck { position: absolute; z-index: 2; top: 7px; right: 7px; display: grid; width: 16px; height: 16px; place-items: center; border: 1px solid #cfd2dd; border-radius: 5px; background: #fff; color: #fff; font-size: 10px; }
+.thumbnailChecked { border-color: #6268ec; background: #6268ec; }
+.importConfirm { position: absolute; z-index: 4; right: 18px; bottom: 70px; display: flex; align-items: center; gap: 8px; padding: 12px; border: 1px solid #dfe1e9; border-radius: 11px; background: #fff; box-shadow: 0 16px 40px rgba(29,33,50,.2); }
+.downloadDialog { position: relative; }
+.importConfirm > div { display: grid; gap: 3px; margin-right: 8px; }
+.importConfirm strong { font-size: 11px; }
+.importConfirm span { color: #9296a4; font-size: 9px; }
+.importConfirm button { height: 31px; padding: 0 9px; border: 1px solid #e0e2e9; border-radius: 7px; background: #fff; cursor: pointer; font-size: 9px; }
+.importConfirm .dangerAction { border-color: #e46a6a; background: #e95f5f; color: #fff; }
 
 @media (max-width: 820px) {
   .downloadBody { grid-template-columns: 1fr; overflow-y: auto; }

@@ -33,6 +33,7 @@ npm run check
 - 默认数据根目录为当前 Windows 用户的 `Documents\MOWO Canvas Data`。
 - 可在 `.env.local` 中设置 `MOWO_DATA_ROOT` 改为其他本地绝对路径；示例见 `.env.example`。
 - 当前目录结构包含 `database`、`storage/originals/images`、`temp/imports`、`trash` 和 `backups`。
+- LINE 下载任务使用 `temp/download-tasks`；选择保留的未勾选文件进入 `storage/download-archive`。
 - 程序升级不得覆盖 `data`。
 - 数据目录位置应可配置，不能散落在源代码目录中。
 - 仅复制程序代码不等于完成数据备份。
@@ -47,3 +48,15 @@ npm run check
 - 若后续允许局域网访问，应先重新评估认证、权限和防火墙。
 
 Docker、开机启动器和桌面封装延后到本地功能稳定后评估。
+
+## LINE 网络与代理
+
+Windows 上默认读取系统设置中已经启用的 HTTP 代理。使用 v2rayN 时，只要“设置系统代理”已开启且对应端口可连接，一般不需要额外配置。
+
+若需要覆盖系统代理，可在 `.env.local` 设置：
+
+```text
+MOWO_HTTP_PROXY=http://127.0.0.1:10809
+```
+
+修改代理后重启 `npm run dev`。代理地址仅在服务端读取，不进入浏览器、SQLite 或日志。

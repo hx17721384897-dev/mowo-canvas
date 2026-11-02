@@ -156,7 +156,7 @@ export function CanvasWorkspace({ projectId, title }: CanvasWorkspaceProps) {
           </div>
         </aside>
       </div>
-      {downloadOpen ? <ImageDownloadModal onClose={() => setDownloadOpen(false)} /> : null}
+      {downloadOpen ? <ImageDownloadModal projectId={projectId} onClose={() => setDownloadOpen(false)} onImported={() => { setDownloadOpen(false); setLeftView("assets"); }} /> : null}
     </main>
   );
 }

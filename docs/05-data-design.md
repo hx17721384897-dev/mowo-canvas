@@ -110,3 +110,9 @@ type CanvasDocument = {
 - 导入前验证 `schemaVersion` 与数据结构。
 
 当前使用 Drizzle ORM 管理 SQLite。首个迁移包含 `projects`、`assets`、`project_assets`、`asset_collections` 和 `asset_collection_items`；迁移文件受 Git 管理，实际数据库不进入仓库。`deletedAt` 已为回收站预留，但删除与自动清理流程尚未开放。
+
+### DownloadTask 与 DownloadItem
+
+下载任务持久化平台、来源链接、项目、状态、进度、总数、用户安全错误与时间。下载项保存任务内顺序、临时相对路径、MIME、大小与动画标记。临时绝对路径不进入数据库或浏览器响应。
+
+任务成功导入后，选中项转为正式 `Asset` 并形成 `AssetCollection`；任务项不是资产身份。未选项根据用户选择删除或移动至下载归档。

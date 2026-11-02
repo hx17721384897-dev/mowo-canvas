@@ -20,7 +20,7 @@ Next.js
 - 画布：`@xyflow/react`
 - 样式：Tailwind CSS
 - 数据库：SQLite
-- ORM：进入阶段 1/2 前比较 Prisma 与 Drizzle 后确定
+- ORM：Drizzle ORM
 - 素材存储：项目外观可访问、但与源代码隔离的本地数据目录
 
 ## 架构边界
@@ -32,6 +32,21 @@ Next.js
 - 本地数据目录不进入 Git。
 - 当前不引入 Redis、消息队列、容器编排或独立微服务。
 - 当前不接入数据库 MCP；AI 通过仓库内的类型、Repository、迁移和验证脚本参与数据库开发。
+
+## 平台下载模块
+
+```text
+下载弹窗
+  ↓ localhost Route Handler
+下载任务模块（SQLite 状态 + 临时文件）
+  ↓
+平台适配器
+  └── LINE：TypeScript 实现
+  ↓
+资产模块（去重、集合、项目引用）
+```
+
+平台适配器只负责把平台链接变成经过验证的临时下载项。下载弹窗不拼接 CDN 地址，资产模块不理解平台元数据。B 站未来使用隔离 Python 工作进程，不进入当前 Node.js 主运行时。
 
 ## 资产模块
 

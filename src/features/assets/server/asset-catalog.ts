@@ -7,7 +7,7 @@ import { and, count, desc, eq, inArray, isNull, ne } from "drizzle-orm";
 import type { AssetProjectSummary, AssetSummary } from "../types";
 import { ensureAssetDataPaths, getAssetDataPaths, resolveStoredAssetPath } from "./data-paths";
 import { getAssetDatabase } from "./database";
-import { assets, projectAssets, projects } from "./schema";
+import { assetCollectionItems, assetCollections, assets, projectAssets, projects } from "./schema";
 
 const MAX_IMAGE_BYTES = 50 * 1024 * 1024;
 const MAX_IMPORT_FILES = 500;
@@ -49,12 +49,23 @@ function toSummary(row: {
   };
 }
 
-async function ensureKnownProjects() {
+export async function ensureKnownProjects() {
   const database = await getAssetDatabase();
   const now = new Date();
   database.insert(projects).values(
     Object.entries(knownProjects).map(([id, name]) => ({ id, name, createdAt: now, updatedAt: now })),
   ).onConflictDoNothing().run();
+}
+
+export async function ensureProject(projectId: string) {
+  await ensureKnownProjects();
+  const database = await getAssetDatabase();
+  database.insert(projects).values({
+    id: projectId,
+    name: knownProjects[projectId] ?? "画布项目",
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  }).onConflictDoNothing().run();
 }
 
 export async function listProjectAssets(projectId: string) {
@@ -105,21 +116,29 @@ export async function referenceAssets(projectId: string, assetIds: string[]) {
   return listProjectAssets(projectId);
 }
 
-export async function importLocalImages(projectId: string, files: File[]) {
+export type ImageBufferImport = {
+  buffer: Buffer;
+  name: string;
+  mimeType: keyof typeof supportedImages;
+  sourceType: string;
+  sourceUrl?: string;
+};
+
+export async function importImageBuffers(projectId: string, sources: ImageBufferImport[], collection?: { name: string; sourceType: string; sourceUrl?: string }) {
   await ensureKnownProjects();
-  if (files.length === 0) throw new Error("请选择图片文件");
-  if (files.length > MAX_IMPORT_FILES) throw new Error(`单次最多导入 ${MAX_IMPORT_FILES} 张图片`);
+  if (sources.length === 0) throw new Error("请选择图片文件");
+  if (sources.length > MAX_IMPORT_FILES) throw new Error(`单次最多导入 ${MAX_IMPORT_FILES} 张图片`);
 
   const paths = await ensureAssetDataPaths();
   const database = await getAssetDatabase();
   const importedIds: string[] = [];
 
-  for (const file of files) {
-    const extension = supportedImages[file.type];
-    if (!extension) throw new Error(`不支持的图片格式：${file.name}`);
-    if (file.size > MAX_IMAGE_BYTES) throw new Error(`图片超过 50MB：${file.name}`);
+  for (const source of sources) {
+    const extension = supportedImages[source.mimeType];
+    if (!extension) throw new Error(`不支持的图片格式：${source.name}`);
+    if (source.buffer.length > MAX_IMAGE_BYTES) throw new Error(`图片超过 50MB：${source.name}`);
 
-    const buffer = Buffer.from(await file.arrayBuffer());
+    const buffer = source.buffer;
     const hash = createHash("sha256").update(buffer).digest("hex");
     const existing = database.select().from(assets).where(eq(assets.contentHash, hash)).get();
     let assetId = existing?.id;
@@ -140,11 +159,12 @@ export async function importLocalImages(projectId: string, files: File[]) {
       database.insert(assets).values({
         id: assetId,
         type: "image",
-        originalName: basename(file.name, extname(file.name)) + extension,
+        originalName: basename(source.name, extname(source.name)) + extension,
         relativePath: relative(paths.root, target).replaceAll("\\", "/"),
-        mimeType: file.type,
-        size: file.size,
-        sourceType: "local",
+        mimeType: source.mimeType,
+        size: buffer.length,
+        sourceType: source.sourceType,
+        sourceUrl: source.sourceUrl,
         contentHash: hash,
         createdAt: new Date(),
       }).run();
@@ -155,10 +175,37 @@ export async function importLocalImages(projectId: string, files: File[]) {
     importedIds.push(assetId);
   }
 
+  if (collection && importedIds.length) {
+    const collectionId = randomUUID();
+    database.insert(assetCollections).values({
+      id: collectionId,
+      name: collection.name,
+      sourceType: collection.sourceType,
+      sourceUrl: collection.sourceUrl,
+      createdAt: new Date(),
+    }).run();
+    database.insert(assetCollectionItems).values(importedIds.map((assetId, position) => ({ collectionId, assetId, position })))
+      .onConflictDoNothing().run();
+  }
+
   return {
     assets: await listProjectAssets(projectId),
     importedIds,
   };
+}
+
+export async function importLocalImages(projectId: string, files: File[]) {
+  const sources: ImageBufferImport[] = [];
+  for (const file of files) {
+    if (!(file.type in supportedImages)) throw new Error(`不支持的图片格式：${file.name}`);
+    sources.push({
+      buffer: Buffer.from(await file.arrayBuffer()),
+      name: file.name,
+      mimeType: file.type as keyof typeof supportedImages,
+      sourceType: "local",
+    });
+  }
+  return importImageBuffers(projectId, sources);
 }
 
 export async function getAssetContent(assetId: string) {

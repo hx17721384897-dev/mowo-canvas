@@ -1,22 +1,29 @@
-export type DownloadCandidate = {
+export type DownloadTaskStatus = "queued" | "resolving" | "downloading" | "ready" | "importing" | "completed" | "failed" | "cancelled";
+
+export type DownloadItemSummary = {
+  id: string;
   externalId: string;
   name: string;
-  mediaUrl: string;
-  mimeType?: string;
+  mimeType: string;
+  size: number;
+  animated: boolean;
+  position: number;
+  previewUrl: string;
 };
 
-export type DownloadCollection = {
-  sourceLabel: string;
+export type DownloadTaskSummary = {
+  id: string;
+  projectId: string;
+  platform: "line";
   sourceUrl: string;
-  items: DownloadCandidate[];
+  sourceKind: "sticker" | "emoji" | null;
+  title: string | null;
+  status: DownloadTaskStatus;
+  progress: number;
+  total: number;
+  errorCode: string | null;
+  errorMessage: string | null;
+  items: DownloadItemSummary[];
+  createdAt: string;
+  updatedAt: string;
 };
-
-export interface ImageDownloadAdapter {
-  readonly id: string;
-  readonly label: string;
-  supports(url: URL): boolean;
-  resolve(url: URL, signal?: AbortSignal): Promise<DownloadCollection>;
-}
-
-// Platform adapters are intentionally added later. The UI and asset catalog do
-// not depend on LINE or any other downloader implementation.

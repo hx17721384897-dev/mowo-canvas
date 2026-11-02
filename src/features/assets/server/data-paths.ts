@@ -9,6 +9,8 @@ export type AssetDataPaths = {
   database: string;
   imageOriginals: string;
   tempImports: string;
+  tempDownloads: string;
+  downloadArchive: string;
   trash: string;
   backups: string;
 };
@@ -24,6 +26,8 @@ export function getAssetDataPaths(): AssetDataPaths {
     database: join(root, "database", "mowo.db"),
     imageOriginals: join(root, "storage", "originals", "images"),
     tempImports: join(root, "temp", "imports"),
+    tempDownloads: join(root, "temp", "download-tasks"),
+    downloadArchive: join(root, "storage", "download-archive"),
     trash: join(root, "trash"),
     backups: join(root, "backups"),
   };
@@ -35,6 +39,8 @@ export async function ensureAssetDataPaths() {
     mkdir(join(paths.root, "database"), { recursive: true }),
     mkdir(paths.imageOriginals, { recursive: true }),
     mkdir(paths.tempImports, { recursive: true }),
+    mkdir(paths.tempDownloads, { recursive: true }),
+    mkdir(paths.downloadArchive, { recursive: true }),
     mkdir(paths.trash, { recursive: true }),
     mkdir(paths.backups, { recursive: true }),
   ]);

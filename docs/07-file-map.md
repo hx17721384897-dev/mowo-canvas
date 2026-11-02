@@ -40,8 +40,9 @@ src/
 │   └── nodes/                            模块卡片主体与通用节点外壳
 └── features/assets/
     ├── asset-panel.tsx                   当前项目资产、本地添加与历史引用
-    ├── image-download-modal.tsx          图片下载预览弹窗骨架
-    ├── downloaders/types.ts              平台无关下载适配器契约
+    ├── image-download-modal.tsx          LINE 下载、预览、选择与导入弹窗
+    ├── downloaders/types.ts              下载任务的浏览器契约
+    ├── downloaders/server/               下载任务执行器、网络客户端与 LINE 适配器
     ├── types.ts                          资产类型与浏览器拖拽协议
     └── server/                           SQLite、文件路径与资产目录服务
 ```
