@@ -23,21 +23,21 @@ MOWO Canvas/
 └── .gitignore                     排除依赖、构建、秘密和本地数据
 ```
 
-## 代码目录约定
-
-创建 Next.js 项目后，预计使用：
+## 当前代码结构
 
 ```text
 src/
-├── app/            页面与服务器路由
-├── components/     通用 UI 与画布组件
-├── features/       按业务能力组织的功能
-├── lib/            数据库、存储和通用基础设施
-├── repositories/   可替换的数据访问层
-└── types/          跨模块共享类型
+└── app/
+    ├── page.tsx                         首页画布项目中心
+    ├── canvas/[id]/page.tsx             动态画布项目路由
+    ├── components/app-icon.tsx          项目内轻量图标组件
+    ├── components/canvas-workspace.tsx  可折叠的工作流编辑器骨架
+    ├── ui-shell.module.css               首页与编辑器组件样式
+    ├── globals.css                       全局变量与基础样式
+    └── layout.tsx                        根布局与页面元数据
 ```
 
-当前只有 `src/app/`。其他目录在出现真实职责时再创建，不预建空模块。
+后续出现真实职责时，再按需要创建 `src/features/`、`src/lib/`、`src/repositories/` 和 `src/types/`，不预建空模块。
 
 ## 可扩展文档目录
 

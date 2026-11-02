@@ -3,7 +3,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "MOWO Canvas",
-  description: "Local-first infinite canvas workspace",
+  description: "本地优先的模块化无限画布工作台",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
