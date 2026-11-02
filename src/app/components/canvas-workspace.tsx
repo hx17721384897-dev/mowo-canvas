@@ -3,6 +3,7 @@
 import type { CSSProperties } from "react";
 import { useState } from "react";
 import Link from "next/link";
+import { CanvasSurface } from "@/features/canvas/canvas-surface";
 import { Icon, type IconName } from "./app-icon";
 import styles from "../ui-shell.module.css";
 
@@ -100,49 +101,11 @@ export function CanvasWorkspace({ title }: CanvasWorkspaceProps) {
           </div>
         </aside>
 
-        <section className={styles.canvasArea} aria-label="无限画布原型区域">
+        <section className={styles.canvasArea} aria-label="无限画布交互区域">
           <button className={`${styles.expandPanelButton} ${styles.expandLeft}`} aria-label="展开左侧工具栏" onClick={() => setLeftCollapsed(false)} type="button"><Icon name="chevron-right" /></button>
           <button className={`${styles.expandPanelButton} ${styles.expandRight}`} aria-label="展开右侧对话栏" onClick={() => setRightCollapsed(false)} type="button"><Icon name="chevron-left" /></button>
-          <div className={styles.canvasHint}><span>100%</span> · 原型画布</div>
-
-          <div className={styles.canvasContent}>
-            <svg className={styles.connectorLayer} viewBox="0 0 1000 620" preserveAspectRatio="none" aria-hidden="true">
-              <path d="M 270 170 C 365 170, 390 245, 500 245" />
-              <path d="M 270 335 C 370 335, 405 320, 500 320" />
-            </svg>
-
-            <article className={`${styles.nodeCard} ${styles.imageNodeOne}`}>
-              <span className={`${styles.port} ${styles.portOutput}`} />
-              <header className={styles.nodeHeader}><span className={styles.nodeHeaderIcon}><Icon name="image" /></span>图片<span className={styles.nodeMore}><Icon name="more" /></span></header>
-              <div className={styles.imageNodeBody}>
-                <span className={styles.nodeThumbnail}><Icon name="image" /></span>
-                <span className={styles.nodeMeta}><strong>表情图集-01.png</strong><span>2048 × 2048 · 3.2 MB</span></span>
-              </div>
-            </article>
-
-            <article className={`${styles.nodeCard} ${styles.imageNodeTwo}`}>
-              <span className={`${styles.port} ${styles.portOutput}`} />
-              <header className={styles.nodeHeader}><span className={styles.nodeHeaderIcon}><Icon name="image" /></span>图片<span className={styles.nodeMore}><Icon name="more" /></span></header>
-              <div className={styles.imageNodeBody}>
-                <span className={styles.nodeThumbnail}><Icon name="image" /></span>
-                <span className={styles.nodeMeta}><strong>表情图集-02.png</strong><span>2048 × 2048 · 2.8 MB</span></span>
-              </div>
-            </article>
-
-            <article className={`${styles.nodeCard} ${styles.cropNode}`}>
-              <span className={`${styles.port} ${styles.portInputOne}`} />
-              <span className={`${styles.port} ${styles.portInputTwo}`} />
-              <span className={`${styles.port} ${styles.cropOutput}`} />
-              <header className={styles.nodeHeader}><span className={`${styles.nodeHeaderIcon} ${styles.cropIcon}`}><Icon name="crop" /></span>批量裁切<span className={styles.nodeMore}><Icon name="more" /></span></header>
-              <div className={styles.cropBody}>
-                <div className={styles.placeholderRow} />
-                <div className={styles.placeholderRow} />
-                <div className={styles.placeholderRow} />
-                <div className={styles.previewPlaceholder}><Icon name="image" /></div>
-                <span className={styles.prototypeNote}>按钮结构待确认</span>
-              </div>
-            </article>
-          </div>
+          <div className={styles.canvasHint}><span>交互画布</span> · 拖动、缩放与连线</div>
+          <CanvasSurface />
 
           <nav className={styles.bottomToolbar} aria-label="常用工具">
             <button className={styles.bottomTool} type="button"><Icon name="plus" /><span>插入</span><Icon name="chevron-down" /></button>

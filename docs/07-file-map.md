@@ -27,7 +27,7 @@ MOWO Canvas/
 
 ```text
 src/
-└── app/
+├── app/
     ├── page.tsx                         首页画布项目中心
     ├── canvas/[id]/page.tsx             动态画布项目路由
     ├── components/app-icon.tsx          项目内轻量图标组件
@@ -35,9 +35,15 @@ src/
     ├── ui-shell.module.css               首页与编辑器组件样式
     ├── globals.css                       全局变量与基础样式
     └── layout.tsx                        根布局与页面元数据
+└── features/canvas/
+    ├── canvas-surface.tsx                React Flow 状态与核心交互
+    ├── module-registry.tsx               模块名称、主体和端口注册表
+    ├── types.ts                          可序列化节点与端口类型
+    ├── canvas.module.css                 画布节点和控件样式
+    └── nodes/                            各模块卡片主体与通用节点外壳
 ```
 
-后续出现真实职责时，再按需要创建 `src/features/`、`src/lib/`、`src/repositories/` 和 `src/types/`，不预建空模块。
+后续出现真实职责时，再按需要创建 `src/lib/`、`src/repositories/` 和 `src/types/`，不预建空模块。
 
 ## 可扩展文档目录
 
