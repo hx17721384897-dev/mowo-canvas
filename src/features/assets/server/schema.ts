@@ -1,0 +1,55 @@
+import { index, integer, primaryKey, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
+
+export const projects = sqliteTable("projects", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
+  updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull(),
+});
+
+export const assets = sqliteTable("assets", {
+  id: text("id").primaryKey(),
+  type: text("type", { enum: ["image", "video", "text"] }).notNull(),
+  originalName: text("original_name").notNull(),
+  relativePath: text("relative_path"),
+  textContent: text("text_content"),
+  mimeType: text("mime_type"),
+  size: integer("size"),
+  width: integer("width"),
+  height: integer("height"),
+  duration: integer("duration"),
+  sourceType: text("source_type").notNull(),
+  sourceUrl: text("source_url"),
+  contentHash: text("content_hash"),
+  createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
+  deletedAt: integer("deleted_at", { mode: "timestamp_ms" }),
+}, (table) => [
+  uniqueIndex("assets_content_hash_unique").on(table.contentHash),
+  index("assets_deleted_at_index").on(table.deletedAt),
+]);
+
+export const projectAssets = sqliteTable("project_assets", {
+  projectId: text("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+  assetId: text("asset_id").notNull().references(() => assets.id, { onDelete: "restrict" }),
+  addedAt: integer("added_at", { mode: "timestamp_ms" }).notNull(),
+}, (table) => [
+  primaryKey({ columns: [table.projectId, table.assetId] }),
+  index("project_assets_asset_id_index").on(table.assetId),
+]);
+
+export const assetCollections = sqliteTable("asset_collections", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  sourceType: text("source_type").notNull(),
+  sourceUrl: text("source_url"),
+  createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
+});
+
+export const assetCollectionItems = sqliteTable("asset_collection_items", {
+  collectionId: text("collection_id").notNull().references(() => assetCollections.id, { onDelete: "cascade" }),
+  assetId: text("asset_id").notNull().references(() => assets.id, { onDelete: "restrict" }),
+  position: integer("position").notNull(),
+}, (table) => [
+  primaryKey({ columns: [table.collectionId, table.assetId] }),
+  uniqueIndex("asset_collection_position_unique").on(table.collectionId, table.position),
+]);

@@ -109,4 +109,4 @@ type CanvasDocument = {
 - `revision` 用于检测旧数据覆盖新数据。
 - 导入前验证 `schemaVersion` 与数据结构。
 
-具体表结构在 ORM 选定时补充，本文件不提前锁定 ORM 语法。
+当前使用 Drizzle ORM 管理 SQLite。首个迁移包含 `projects`、`assets`、`project_assets`、`asset_collections` 和 `asset_collection_items`；迁移文件受 Git 管理，实际数据库不进入仓库。`deletedAt` 已为回收站预留，但删除与自动清理流程尚未开放。

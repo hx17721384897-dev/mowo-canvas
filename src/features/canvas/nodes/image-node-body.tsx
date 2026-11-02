@@ -6,7 +6,7 @@ export function ImageNodeBody({ data }: { data: CanvasModuleData }) {
   return (
     <div className={styles.imageBody}>
       <span className={`${styles.thumbnail} ${data.variant === "cool" ? styles.thumbnailCool : ""}`}>
-        <Icon name="image" />
+        {data.previewUrl ? <Image alt="" fill sizes="48px" src={data.previewUrl} unoptimized /> : <Icon name="image" />}
       </span>
       <span className={styles.imageMeta}>
         <strong>{data.title ?? "未命名图片"}</strong>
@@ -15,3 +15,4 @@ export function ImageNodeBody({ data }: { data: CanvasModuleData }) {
     </div>
   );
 }
+import Image from "next/image";

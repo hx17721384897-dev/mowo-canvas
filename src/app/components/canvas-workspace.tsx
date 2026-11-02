@@ -4,10 +4,12 @@ import type { CSSProperties } from "react";
 import { useState } from "react";
 import Link from "next/link";
 import { CanvasSurface } from "@/features/canvas/canvas-surface";
+import { AssetPanel } from "@/features/assets/asset-panel";
+import { ImageDownloadModal } from "@/features/assets/image-download-modal";
 import { Icon, type IconName } from "./app-icon";
 import styles from "../ui-shell.module.css";
 
-type CanvasWorkspaceProps = { title: string };
+type CanvasWorkspaceProps = { projectId: string; title: string };
 
 const toolGroups: Array<{
   label: string;
@@ -36,9 +38,11 @@ const toolGroups: Array<{
   },
 ];
 
-export function CanvasWorkspace({ title }: CanvasWorkspaceProps) {
+export function CanvasWorkspace({ projectId, title }: CanvasWorkspaceProps) {
   const [leftCollapsed, setLeftCollapsed] = useState(false);
   const [rightCollapsed, setRightCollapsed] = useState(false);
+  const [leftView, setLeftView] = useState<"tools" | "assets">("tools");
+  const [downloadOpen, setDownloadOpen] = useState(false);
 
   const bodyClassName = [
     styles.editorBody,
@@ -72,32 +76,44 @@ export function CanvasWorkspace({ title }: CanvasWorkspaceProps) {
         <aside className={styles.toolPanel} aria-hidden={leftCollapsed}>
           <div className={styles.panelInner}>
             <div className={styles.panelHeader}>
-              <h2>工具</h2>
+              <div className={styles.leftViewTabs} aria-label="左侧面板">
+                <button className={leftView === "tools" ? styles.leftViewTabActive : ""} onClick={() => setLeftView("tools")} type="button">功能</button>
+                <button className={leftView === "assets" ? styles.leftViewTabActive : ""} onClick={() => setLeftView("assets")} type="button">资产</button>
+              </div>
               <button aria-label="折叠左侧工具栏" onClick={() => setLeftCollapsed(true)} type="button"><Icon name="chevron-left" /></button>
             </div>
-            <label className={styles.toolSearch}>
-              <Icon name="search" />
-              <input aria-label="搜索工具" placeholder="搜索工具" type="search" />
-            </label>
-            {toolGroups.map((group) => (
-              <section className={styles.toolSection} key={group.label}>
-                <span className={styles.toolSectionLabel}>{group.label}</span>
-                <div className={styles.toolGroup}>
-                  {group.items.map((item) => (
-                    <button className={styles.toolItem} key={item.label} type="button">
-                      <span
-                        className={styles.toolIcon}
-                        style={{ "--tool-color": item.color, "--tool-soft": item.soft } as CSSProperties}
-                      >
-                        <Icon name={item.icon} />
-                      </span>
-                      <span>{item.label}</span>
-                      {item.expandable ? <Icon name="chevron-right" /> : null}
-                    </button>
-                  ))}
-                </div>
-              </section>
-            ))}
+            {leftView === "assets" ? <AssetPanel projectId={projectId} /> : (
+              <div className={styles.toolPanelContent}>
+                <label className={styles.toolSearch}>
+                  <Icon name="search" />
+                  <input aria-label="搜索工具" placeholder="搜索工具" type="search" />
+                </label>
+                {toolGroups.map((group) => (
+                  <section className={styles.toolSection} key={group.label}>
+                    <span className={styles.toolSectionLabel}>{group.label}</span>
+                    <div className={styles.toolGroup}>
+                      {group.items.map((item) => item.label === "下载" ? (
+                        <div className={styles.downloadTool} key={item.label}>
+                          <button className={styles.toolItem} type="button">
+                            <span className={styles.toolIcon} style={{ "--tool-color": item.color, "--tool-soft": item.soft } as CSSProperties}><Icon name={item.icon} /></span>
+                            <span>{item.label}</span><Icon name="chevron-right" />
+                          </button>
+                          <div className={styles.downloadSubmenu}>
+                            <button onClick={() => setDownloadOpen(true)} type="button"><Icon name="image" /><span>下载图片<small>链接导入与素材预览</small></span></button>
+                            <button disabled type="button"><Icon name="video" /><span>下载视频<small>后续版本开放</small></span></button>
+                          </div>
+                        </div>
+                      ) : (
+                        <button className={styles.toolItem} key={item.label} type="button">
+                          <span className={styles.toolIcon} style={{ "--tool-color": item.color, "--tool-soft": item.soft } as CSSProperties}><Icon name={item.icon} /></span>
+                          <span>{item.label}</span>{item.expandable ? <Icon name="chevron-right" /> : null}
+                        </button>
+                      ))}
+                    </div>
+                  </section>
+                ))}
+              </div>
+            )}
           </div>
         </aside>
 
@@ -140,6 +156,7 @@ export function CanvasWorkspace({ title }: CanvasWorkspaceProps) {
           </div>
         </aside>
       </div>
+      {downloadOpen ? <ImageDownloadModal onClose={() => setDownloadOpen(false)} /> : null}
     </main>
   );
 }

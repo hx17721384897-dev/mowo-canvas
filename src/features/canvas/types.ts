@@ -13,6 +13,8 @@ export type CanvasModuleType = "image" | "batch-crop";
 
 export type CanvasModuleData = {
   moduleType: CanvasModuleType;
+  assetId?: string;
+  previewUrl?: string;
   title?: string;
   detail?: string;
   variant?: "warm" | "cool";

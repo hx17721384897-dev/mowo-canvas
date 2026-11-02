@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useRef } from "react";
 import {
   addEdge,
   Background,
@@ -10,10 +10,12 @@ import {
   type Connection,
   type Edge,
   type IsValidConnection,
+  type ReactFlowInstance,
   useEdgesState,
   useNodesState,
 } from "@xyflow/react";
 import { getCanvasModule } from "./module-registry";
+import { ASSET_DRAG_TYPE, type AssetSummary } from "@/features/assets/types";
 import { ModuleNode } from "./nodes/module-node";
 import type { CanvasModuleNode } from "./types";
 import styles from "./canvas.module.css";
@@ -52,8 +54,9 @@ function findPort(node: CanvasModuleNode | undefined, handleId: string | null | 
 }
 
 export function CanvasSurface() {
-  const [nodes, , onNodesChange] = useNodesState<CanvasModuleNode>(initialNodes);
+  const [nodes, setNodes, onNodesChange] = useNodesState<CanvasModuleNode>(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+  const flowRef = useRef<ReactFlowInstance<CanvasModuleNode, Edge> | null>(null);
 
   const isValidConnection: IsValidConnection<Edge> = useCallback((connection) => {
     const sourceNode = nodes.find((node) => node.id === connection.source);
@@ -71,6 +74,38 @@ export function CanvasSurface() {
     setEdges((currentEdges) => addEdge({ ...connection, type: "smoothstep" }, currentEdges));
   }, [setEdges]);
 
+  const onDragOver = useCallback((event: React.DragEvent) => {
+    if (!event.dataTransfer.types.includes(ASSET_DRAG_TYPE)) return;
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "copy";
+  }, []);
+
+  const onDrop = useCallback((event: React.DragEvent) => {
+    const serialized = event.dataTransfer.getData(ASSET_DRAG_TYPE);
+    if (!serialized || !flowRef.current) return;
+    event.preventDefault();
+
+    try {
+      const asset = JSON.parse(serialized) as AssetSummary;
+      if (asset.type !== "image") return;
+      const position = flowRef.current.screenToFlowPosition({ x: event.clientX, y: event.clientY });
+      setNodes((current) => current.concat({
+        id: `asset-${asset.id}-${crypto.randomUUID()}`,
+        type: "module",
+        position,
+        data: {
+          moduleType: "image",
+          assetId: asset.id,
+          previewUrl: asset.previewUrl ?? undefined,
+          title: asset.name,
+          detail: asset.size ? `${(asset.size / 1024 / 1024).toFixed(1)} MB · 资产库` : "资产库",
+        },
+      }));
+    } catch {
+      // Ignore malformed external drag data.
+    }
+  }, [setNodes]);
+
   return (
     <div className={styles.surface}>
       <ReactFlow<CanvasModuleNode, Edge>
@@ -81,6 +116,9 @@ export function CanvasSurface() {
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
+        onDragOver={onDragOver}
+        onDrop={onDrop}
+        onInit={(instance) => { flowRef.current = instance; }}
         isValidConnection={isValidConnection}
         deleteKeyCode={["Backspace", "Delete"]}
         fitView

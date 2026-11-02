@@ -30,9 +30,14 @@ npm run check
 ## 本地数据
 
 - SQLite 数据库和素材目录不进入 Git。
+- 默认数据根目录为当前 Windows 用户的 `Documents\MOWO Canvas Data`。
+- 可在 `.env.local` 中设置 `MOWO_DATA_ROOT` 改为其他本地绝对路径；示例见 `.env.example`。
+- 当前目录结构包含 `database`、`storage/originals/images`、`temp/imports`、`trash` 和 `backups`。
 - 程序升级不得覆盖 `data`。
 - 数据目录位置应可配置，不能散落在源代码目录中。
 - 仅复制程序代码不等于完成数据备份。
+
+数据库结构变更先修改 Drizzle 表定义，再运行 `npm run db:generate` 生成迁移。程序首次访问资产接口时会自动执行尚未应用的迁移。
 
 ## 安全边界
 

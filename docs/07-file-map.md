@@ -8,6 +8,7 @@
 MOWO Canvas/
 ├── .agents/skills/mowo-project/   项目级 AI 工作入口
 ├── src/app/                       Next.js App Router 页面与全局样式
+├── drizzle/                       受版本控制的 SQLite 迁移
 ├── docs/                          当前设计、需求、API、规则与隔离历史
 ├── data/                          本地运行数据说明；实际数据不进 Git
 ├── AGENTS.md                      对进入项目的 AI 强制入口
@@ -28,22 +29,24 @@ MOWO Canvas/
 ```text
 src/
 ├── app/
-    ├── page.tsx                         首页画布项目中心
-    ├── canvas/[id]/page.tsx             动态画布项目路由
-    ├── components/app-icon.tsx          项目内轻量图标组件
-    ├── components/canvas-workspace.tsx  可折叠的工作流编辑器骨架
-    ├── ui-shell.module.css               首页与编辑器组件样式
-    ├── globals.css                       全局变量与基础样式
-    └── layout.tsx                        根布局与页面元数据
-└── features/canvas/
-    ├── canvas-surface.tsx                React Flow 状态与核心交互
-    ├── module-registry.tsx               模块名称、主体和端口注册表
-    ├── types.ts                          可序列化节点与端口类型
-    ├── canvas.module.css                 画布节点和控件样式
-    └── nodes/                            各模块卡片主体与通用节点外壳
+│   ├── page.tsx                         首页画布项目中心
+│   ├── canvas/[id]/page.tsx             动态画布项目路由
+│   ├── components/canvas-workspace.tsx  可折叠工作流编辑器与左侧页签
+│   ├── api/                              资产查询、导入、引用与内容接口
+│   └── ui-shell.module.css               首页与编辑器组件样式
+├── features/canvas/
+│   ├── canvas-surface.tsx                React Flow 状态、连线与资产拖入
+│   ├── module-registry.tsx               模块名称、主体和端口注册表
+│   └── nodes/                            模块卡片主体与通用节点外壳
+└── features/assets/
+    ├── asset-panel.tsx                   当前项目资产、本地添加与历史引用
+    ├── image-download-modal.tsx          图片下载预览弹窗骨架
+    ├── downloaders/types.ts              平台无关下载适配器契约
+    ├── types.ts                          资产类型与浏览器拖拽协议
+    └── server/                           SQLite、文件路径与资产目录服务
 ```
 
-后续出现真实职责时，再按需要创建 `src/lib/`、`src/repositories/` 和 `src/types/`，不预建空模块。
+`drizzle.config.ts` 负责生成迁移；`MOWO_DATA_ROOT` 只控制运行数据位置，不改变迁移文件位置。
 
 ## 可扩展文档目录
 

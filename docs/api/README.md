@@ -1,6 +1,8 @@
 # API 文档入口
 
-当前尚无业务 API。本目录将在出现 Route Handler、Server Action、Repository 跨层契约或未来公开 API 时记录当前接口行为。
+当前业务接口：
+
+- `assets.md`：本地资产查询、图片导入、跨项目引用与内容读取。
 
 ## 每个接口必须记录
 

@@ -45,7 +45,8 @@
 .nodeHeaderIcon svg { width: 13px; height: 13px; }
 
 .imageBody { display: flex; align-items: center; gap: 9px; padding: 10px; }
-.thumbnail { display: grid; width: 48px; height: 43px; flex: 0 0 auto; place-items: center; border-radius: 8px; background: linear-gradient(145deg, #ffe0b8, #f6b5a7); color: rgba(124, 75, 50, 0.7); }
+.thumbnail { position: relative; display: grid; width: 48px; height: 43px; flex: 0 0 auto; place-items: center; overflow: hidden; border-radius: 8px; background: linear-gradient(145deg, #ffe0b8, #f6b5a7); color: rgba(124, 75, 50, 0.7); }
+.thumbnail img { object-fit: cover; }
 .thumbnailCool { background: linear-gradient(145deg, #dbe8ff, #c8bcf3); color: #6772a5; }
 .thumbnail svg { width: 20px; height: 20px; }
 .imageMeta { min-width: 0; }

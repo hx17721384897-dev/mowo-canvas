@@ -14,5 +14,5 @@ const projectTitles: Record<string, string> = {
 
 export default async function CanvasPage({ params }: PageProps<"/canvas/[id]">) {
   const { id } = await params;
-  return <CanvasWorkspace title={projectTitles[id] ?? "画布项目"} />;
+  return <CanvasWorkspace projectId={id} title={projectTitles[id] ?? "画布项目"} />;
 }
