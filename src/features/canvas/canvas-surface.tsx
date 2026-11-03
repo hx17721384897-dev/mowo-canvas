@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import {
   addEdge,
   Background,
@@ -53,10 +53,15 @@ function findPort(node: CanvasModuleNode | undefined, handleId: string | null | 
   return getCanvasModule(node.data.moduleType)[side].find((port) => port.id === handleId);
 }
 
-export function CanvasSurface() {
+export function CanvasSurface({ onAssetIdsChange }: { onAssetIdsChange: (assetIds: string[]) => void }) {
   const [nodes, setNodes, onNodesChange] = useNodesState<CanvasModuleNode>(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const flowRef = useRef<ReactFlowInstance<CanvasModuleNode, Edge> | null>(null);
+  const assetIdSignature = [...new Set(nodes.flatMap((node) => node.data.assetId ? [node.data.assetId] : []))].sort().join("\n");
+
+  useEffect(() => {
+    onAssetIdsChange(assetIdSignature ? assetIdSignature.split("\n") : []);
+  }, [assetIdSignature, onAssetIdsChange]);
 
   const isValidConnection: IsValidConnection<Edge> = useCallback((connection) => {
     const sourceNode = nodes.find((node) => node.id === connection.source);

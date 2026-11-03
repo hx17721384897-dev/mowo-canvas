@@ -13,13 +13,14 @@
 .addMenu button span { display: grid; gap: 2px; font-size: 11px; font-weight: 650; }
 .addMenu small { color: #9498a7; font-size: 9px; font-weight: 400; }
 .assetSectionTitle { display: flex; align-items: center; justify-content: space-between; margin: 16px 3px 8px; }
-.assetSectionTitle strong { font-size: 11px; }
+.assetScopeSelect { min-width: 0; max-width: calc(100% - 28px); height: 26px; padding: 0 5px; border: 1px solid transparent; border-radius: 6px; outline: 0; background: transparent; color: #383c49; cursor: pointer; font-size: 11px; font-weight: 700; }
+.assetScopeSelect:hover, .assetScopeSelect:focus-visible { border-color: #dfe1eb; background: #f7f8fb; }
 .assetSectionTitle span { color: #9296a4; font-size: 9px; }
 .assetFilters { display: flex; gap: 4px; margin-bottom: 10px; }
 .assetFilters button { padding: 5px 8px; border-radius: 7px; background: #f2f3f7; color: #747988; cursor: pointer; font-size: 9px; }
 .assetFilters .filterActive { background: #6268ec; color: #fff; }
 .assetMessage { margin-bottom: 8px; padding: 7px 8px; border-radius: 7px; background: #eef0ff; color: #5d63d9; font-size: 9px; line-height: 1.4; }
-.assetGrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; }
+.assetGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 7px; }
 .assetCard { min-width: 0; padding: 5px; border: 1px solid #e7e8ef; border-radius: 9px; background: #fff; cursor: grab; }
 .assetCard:active { cursor: grabbing; }
 .assetCard:hover { border-color: #bfc3f6; box-shadow: 0 6px 14px rgba(47, 52, 80, .08); }

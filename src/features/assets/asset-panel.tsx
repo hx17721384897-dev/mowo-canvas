@@ -7,12 +7,19 @@ import { ASSET_DRAG_TYPE, type AssetProjectSummary, type AssetSummary, type Asse
 import styles from "./asset-ui.module.css";
 
 type AssetFilter = "all" | AssetType;
+type AssetScope = "project" | "on-canvas" | "off-canvas";
 
 const filters: Array<{ value: AssetFilter; label: string }> = [
   { value: "all", label: "全部" },
   { value: "image", label: "图片" },
   { value: "video", label: "视频" },
   { value: "text", label: "文字" },
+];
+
+const scopes: Array<{ value: AssetScope; label: string }> = [
+  { value: "project", label: "当前项目资产" },
+  { value: "on-canvas", label: "画布上的资产" },
+  { value: "off-canvas", label: "未在画布上的资产" },
 ];
 
 function formatSize(size: number | null) {
@@ -126,9 +133,10 @@ function HistoryAssetDialog({ currentProjectId, onClose, onReferenced }: {
   );
 }
 
-export function AssetPanel({ projectId }: { projectId: string }) {
+export function AssetPanel({ canvasAssetIds, projectId }: { canvasAssetIds: ReadonlySet<string>; projectId: string }) {
   const [assets, setAssets] = useState<AssetSummary[]>([]);
   const [filter, setFilter] = useState<AssetFilter>("all");
+  const [scope, setScope] = useState<AssetScope>("project");
   const [query, setQuery] = useState("");
   const [addMenuOpen, setAddMenuOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
@@ -142,10 +150,16 @@ export function AssetPanel({ projectId }: { projectId: string }) {
       .then((payload: { assets: AssetSummary[] }) => setAssets(payload.assets));
   }, [projectId]);
 
-  const visibleAssets = useMemo(() => assets.filter((asset) => {
+  const scopedAssets = useMemo(() => assets.filter((asset) => {
+    if (scope === "on-canvas") return canvasAssetIds.has(asset.id);
+    if (scope === "off-canvas") return !canvasAssetIds.has(asset.id);
+    return true;
+  }), [assets, canvasAssetIds, scope]);
+
+  const visibleAssets = useMemo(() => scopedAssets.filter((asset) => {
     const matchesType = filter === "all" || asset.type === filter;
     return matchesType && asset.name.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase());
-  }), [assets, filter, query]);
+  }), [filter, query, scopedAssets]);
 
   const importFiles = async (files: FileList | null) => {
     if (!files?.length) return;
@@ -186,7 +200,12 @@ export function AssetPanel({ projectId }: { projectId: string }) {
         <input accept="image/png,image/jpeg,image/webp,image/gif" hidden multiple onChange={(event) => void importFiles(event.target.files)} ref={inputRef} type="file" />
       </div>
 
-      <div className={styles.assetSectionTitle}><strong>当前项目资产</strong><span>{assets.length}</span></div>
+      <div className={styles.assetSectionTitle}>
+        <select aria-label="资产范围" className={styles.assetScopeSelect} onChange={(event) => setScope(event.target.value as AssetScope)} value={scope}>
+          {scopes.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
+        </select>
+        <span>{scopedAssets.length}</span>
+      </div>
       <div className={styles.assetFilters}>
         {filters.map((item) => <button className={filter === item.value ? styles.filterActive : ""} key={item.value} onClick={() => setFilter(item.value)} type="button">{item.label}</button>)}
       </div>
@@ -197,8 +216,8 @@ export function AssetPanel({ projectId }: { projectId: string }) {
       ) : (
         <div className={styles.assetEmpty}>
           <Icon name="image" />
-          <strong>{assets.length ? "没有匹配的资产" : "当前项目还没有资产"}</strong>
-          <span>点击“添加”从本地或历史画布加入</span>
+          <strong>{assets.length ? "这个范围内没有匹配的资产" : "当前项目还没有资产"}</strong>
+          <span>{assets.length ? "可切换资产范围或调整筛选条件" : "点击“添加”从本地或历史画布加入"}</span>
         </div>
       )}
 

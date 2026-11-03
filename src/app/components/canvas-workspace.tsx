@@ -1,7 +1,6 @@
 "use client";
 
-import type { CSSProperties } from "react";
-import { useState } from "react";
+import { useCallback, useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent } from "react";
 import Link from "next/link";
 import { CanvasSurface } from "@/features/canvas/canvas-surface";
 import { AssetPanel } from "@/features/assets/asset-panel";
@@ -10,6 +9,12 @@ import { Icon, type IconName } from "./app-icon";
 import styles from "../ui-shell.module.css";
 
 type CanvasWorkspaceProps = { projectId: string; title: string };
+type ResizeSide = "left" | "right";
+
+const panelLimits = {
+  left: { min: 180, max: 420 },
+  right: { min: 240, max: 520 },
+} as const;
 
 const toolGroups: Array<{
   label: string;
@@ -43,12 +48,86 @@ export function CanvasWorkspace({ projectId, title }: CanvasWorkspaceProps) {
   const [rightCollapsed, setRightCollapsed] = useState(false);
   const [leftView, setLeftView] = useState<"tools" | "assets">("tools");
   const [downloadOpen, setDownloadOpen] = useState(false);
+  const [leftWidth, setLeftWidth] = useState(218);
+  const [rightWidth, setRightWidth] = useState(284);
+  const [resizingSide, setResizingSide] = useState<ResizeSide | null>(null);
+  const [canvasAssetIds, setCanvasAssetIds] = useState<ReadonlySet<string>>(() => new Set());
+  const resizeRef = useRef<{
+    side: ResizeSide;
+    pointerId: number;
+    startX: number;
+    startWidth: number;
+    previousCursor: string;
+    previousUserSelect: string;
+  } | null>(null);
+
+  const clampPanelWidth = useCallback((side: ResizeSide, width: number) => {
+    const limits = panelLimits[side];
+    const otherWidth = side === "left" ? (rightCollapsed ? 0 : rightWidth) : (leftCollapsed ? 0 : leftWidth);
+    const viewportLimit = typeof window === "undefined" ? limits.max : window.innerWidth - otherWidth - 420;
+    return Math.min(Math.max(width, limits.min), Math.max(limits.min, Math.min(limits.max, viewportLimit)));
+  }, [leftCollapsed, leftWidth, rightCollapsed, rightWidth]);
+
+  const beginResize = (side: ResizeSide, event: PointerEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    event.currentTarget.setPointerCapture(event.pointerId);
+    resizeRef.current = {
+      side,
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startWidth: side === "left" ? leftWidth : rightWidth,
+      previousCursor: document.body.style.cursor,
+      previousUserSelect: document.body.style.userSelect,
+    };
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
+    setResizingSide(side);
+  };
+
+  const moveResize = (event: PointerEvent<HTMLButtonElement>) => {
+    const resize = resizeRef.current;
+    if (!resize || resize.pointerId !== event.pointerId) return;
+    const delta = event.clientX - resize.startX;
+    const nextWidth = clampPanelWidth(resize.side, resize.startWidth + (resize.side === "left" ? delta : -delta));
+    if (resize.side === "left") setLeftWidth(nextWidth); else setRightWidth(nextWidth);
+  };
+
+  const endResize = (event: PointerEvent<HTMLButtonElement>) => {
+    const resize = resizeRef.current;
+    if (!resize || resize.pointerId !== event.pointerId) return;
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
+    document.body.style.cursor = resize.previousCursor;
+    document.body.style.userSelect = resize.previousUserSelect;
+    resizeRef.current = null;
+    setResizingSide(null);
+  };
+
+  const resizeWithKeyboard = (side: ResizeSide, event: KeyboardEvent<HTMLButtonElement>) => {
+    if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+    event.preventDefault();
+    const visualDirection = event.key === "ArrowRight" ? 1 : -1;
+    const delta = visualDirection * (side === "left" ? 12 : -12);
+    if (side === "left") setLeftWidth((width) => clampPanelWidth(side, width + delta));
+    else setRightWidth((width) => clampPanelWidth(side, width + delta));
+  };
+
+  const handleCanvasAssetIdsChange = useCallback((assetIds: string[]) => {
+    setCanvasAssetIds((current) => {
+      if (current.size === assetIds.length && assetIds.every((id) => current.has(id))) return current;
+      return new Set(assetIds);
+    });
+  }, []);
 
   const bodyClassName = [
     styles.editorBody,
     leftCollapsed ? styles.leftCollapsed : "",
     rightCollapsed ? styles.rightCollapsed : "",
+    resizingSide ? styles.resizingPanels : "",
   ].filter(Boolean).join(" ");
+  const bodyStyle = {
+    "--left-panel-width": `${leftWidth}px`,
+    "--right-panel-width": `${rightWidth}px`,
+  } as CSSProperties;
 
   return (
     <main className={styles.editorShell}>
@@ -72,7 +151,7 @@ export function CanvasWorkspace({ projectId, title }: CanvasWorkspaceProps) {
         <button className={styles.topbarAction} type="button"><Icon name="upload" />导出</button>
       </header>
 
-      <div className={bodyClassName}>
+      <div className={bodyClassName} style={bodyStyle}>
         <aside className={styles.toolPanel} aria-hidden={leftCollapsed}>
           <div className={styles.panelInner}>
             <div className={styles.panelHeader}>
@@ -82,7 +161,7 @@ export function CanvasWorkspace({ projectId, title }: CanvasWorkspaceProps) {
               </div>
               <button aria-label="折叠左侧工具栏" onClick={() => setLeftCollapsed(true)} type="button"><Icon name="chevron-left" /></button>
             </div>
-            {leftView === "assets" ? <AssetPanel projectId={projectId} /> : (
+            {leftView === "assets" ? <AssetPanel canvasAssetIds={canvasAssetIds} projectId={projectId} /> : (
               <div className={styles.toolPanelContent}>
                 <label className={styles.toolSearch}>
                   <Icon name="search" />
@@ -115,13 +194,28 @@ export function CanvasWorkspace({ projectId, title }: CanvasWorkspaceProps) {
               </div>
             )}
           </div>
+          <button
+            aria-label="调整左侧面板宽度"
+            aria-orientation="vertical"
+            aria-valuemax={panelLimits.left.max}
+            aria-valuemin={panelLimits.left.min}
+            aria-valuenow={Math.round(leftWidth)}
+            className={`${styles.panelResizeHandle} ${styles.leftResizeHandle}`}
+            onKeyDown={(event) => resizeWithKeyboard("left", event)}
+            onPointerCancel={endResize}
+            onPointerDown={(event) => beginResize("left", event)}
+            onPointerMove={moveResize}
+            onPointerUp={endResize}
+            role="separator"
+            type="button"
+          />
         </aside>
 
         <section className={styles.canvasArea} aria-label="无限画布交互区域">
           <button className={`${styles.expandPanelButton} ${styles.expandLeft}`} aria-label="展开左侧工具栏" onClick={() => setLeftCollapsed(false)} type="button"><Icon name="chevron-right" /></button>
           <button className={`${styles.expandPanelButton} ${styles.expandRight}`} aria-label="展开右侧对话栏" onClick={() => setRightCollapsed(false)} type="button"><Icon name="chevron-left" /></button>
           <div className={styles.canvasHint}><span>交互画布</span> · 拖动、缩放与连线</div>
-          <CanvasSurface />
+          <CanvasSurface onAssetIdsChange={handleCanvasAssetIdsChange} />
 
           <nav className={styles.bottomToolbar} aria-label="常用工具">
             <button className={styles.bottomTool} type="button"><Icon name="plus" /><span>插入</span><Icon name="chevron-down" /></button>
@@ -132,6 +226,21 @@ export function CanvasWorkspace({ projectId, title }: CanvasWorkspaceProps) {
         </section>
 
         <aside className={styles.chatPanel} aria-hidden={rightCollapsed}>
+          <button
+            aria-label="调整右侧面板宽度"
+            aria-orientation="vertical"
+            aria-valuemax={panelLimits.right.max}
+            aria-valuemin={panelLimits.right.min}
+            aria-valuenow={Math.round(rightWidth)}
+            className={`${styles.panelResizeHandle} ${styles.rightResizeHandle}`}
+            onKeyDown={(event) => resizeWithKeyboard("right", event)}
+            onPointerCancel={endResize}
+            onPointerDown={(event) => beginResize("right", event)}
+            onPointerMove={moveResize}
+            onPointerUp={endResize}
+            role="separator"
+            type="button"
+          />
           <div className={styles.panelInner}>
             <div className={styles.panelHeader}>
               <h2>AI 助手</h2>
