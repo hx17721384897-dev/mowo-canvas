@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Icon } from "@/app/components/app-icon";
 import { ASSET_DRAG_TYPE, type AssetProjectSummary, type AssetSummary, type AssetType } from "./types";
 import styles from "./asset-ui.module.css";
@@ -160,7 +160,12 @@ export function AssetPanel({ canvasAssetIds, onLocateAsset, projectId, refreshKe
   const [historyOpen, setHistoryOpen] = useState(false);
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState("");
+  const [scrollThumb, setScrollThumb] = useState({ height: 0, top: 0, visible: false });
   const inputRef = useRef<HTMLInputElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const scrollViewportRef = useRef<HTMLDivElement>(null);
+  const scrollHideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const scrollDragRef = useRef<{ pointerY: number; scrollTop: number } | null>(null);
 
   useEffect(() => {
     fetch(`/api/projects/${encodeURIComponent(projectId)}/assets`, { cache: "no-store" })
@@ -178,6 +183,77 @@ export function AssetPanel({ canvasAssetIds, onLocateAsset, projectId, refreshKe
     const matchesType = filter === "all" || asset.type === filter;
     return matchesType && asset.name.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase());
   }), [filter, query, scopedAssets]);
+
+  const updateScrollThumb = useCallback((visible?: boolean) => {
+    const scroller = scrollRef.current;
+    const viewportElement = scrollViewportRef.current;
+    if (!scroller || !viewportElement) return;
+    const trackHeight = Math.max(0, viewportElement.clientHeight - 8);
+    const maxScroll = scroller.scrollHeight - scroller.clientHeight;
+    if (maxScroll <= 1 || trackHeight <= 0) {
+      setScrollThumb({ height: 0, top: 0, visible: false });
+      return;
+    }
+    const height = Math.max(28, trackHeight * (scroller.clientHeight / scroller.scrollHeight));
+    const travel = trackHeight - height;
+    const top = 4 + travel * (scroller.scrollTop / maxScroll);
+    setScrollThumb((current) => ({ height, top, visible: visible ?? current.visible }));
+  }, []);
+
+  const scheduleScrollThumbHide = useCallback(() => {
+    if (scrollHideTimerRef.current) clearTimeout(scrollHideTimerRef.current);
+    scrollHideTimerRef.current = setTimeout(() => {
+      setScrollThumb((current) => ({ ...current, visible: false }));
+    }, 700);
+  }, []);
+
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => updateScrollThumb(false));
+    const resizeObserver = new ResizeObserver(() => updateScrollThumb(false));
+    if (scrollRef.current) resizeObserver.observe(scrollRef.current);
+    if (scrollViewportRef.current) resizeObserver.observe(scrollViewportRef.current);
+    return () => {
+      cancelAnimationFrame(frame);
+      resizeObserver.disconnect();
+    };
+  }, [updateScrollThumb, visibleAssets.length]);
+
+  useEffect(() => () => {
+    if (scrollHideTimerRef.current) clearTimeout(scrollHideTimerRef.current);
+  }, []);
+
+  const onAssetScroll = () => {
+    updateScrollThumb(true);
+    scheduleScrollThumbHide();
+  };
+
+  const onScrollThumbPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
+    const scroller = scrollRef.current;
+    if (!scroller) return;
+    event.preventDefault();
+    event.currentTarget.setPointerCapture(event.pointerId);
+    scrollDragRef.current = { pointerY: event.clientY, scrollTop: scroller.scrollTop };
+    if (scrollHideTimerRef.current) clearTimeout(scrollHideTimerRef.current);
+    setScrollThumb((current) => ({ ...current, visible: true }));
+  };
+
+  const onScrollThumbPointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    const scroller = scrollRef.current;
+    const viewportElement = scrollViewportRef.current;
+    const drag = scrollDragRef.current;
+    if (!scroller || !viewportElement || !drag) return;
+    const trackHeight = viewportElement.clientHeight - 8;
+    const travel = trackHeight - scrollThumb.height;
+    const maxScroll = scroller.scrollHeight - scroller.clientHeight;
+    if (travel <= 0 || maxScroll <= 0) return;
+    scroller.scrollTop = drag.scrollTop + (event.clientY - drag.pointerY) * (maxScroll / travel);
+  };
+
+  const onScrollThumbPointerUp = (event: React.PointerEvent<HTMLDivElement>) => {
+    scrollDragRef.current = null;
+    event.currentTarget.releasePointerCapture(event.pointerId);
+    scheduleScrollThumbHide();
+  };
 
   const importFiles = async (files: FileList | null) => {
     if (!files?.length) return;
@@ -229,8 +305,8 @@ export function AssetPanel({ canvasAssetIds, onLocateAsset, projectId, refreshKe
       </div>
 
       {message ? <div className={styles.assetMessage} aria-live="polite">{message}</div> : null}
-      <div className={styles.assetListViewport}>
-        <div className={styles.assetListScroller} data-asset-scroll-container>
+      <div className={styles.assetListViewport} ref={scrollViewportRef}>
+        <div className={styles.assetListScroller} data-asset-scroll-container onScroll={onAssetScroll} ref={scrollRef}>
           <div className={styles.assetListContent}>
             {pending ? <div className={styles.assetEmpty}>正在导入图片…</div> : visibleAssets.length ? (
               <div className={styles.assetGrid}>{visibleAssets.map((asset) => <AssetCard asset={asset} key={asset.id} onLocate={scope === "on-canvas" ? () => onLocateAsset?.(asset.id) : undefined} />)}</div>
@@ -243,6 +319,17 @@ export function AssetPanel({ canvasAssetIds, onLocateAsset, projectId, refreshKe
             )}
           </div>
         </div>
+        {scrollThumb.height ? (
+          <div
+            aria-hidden="true"
+            className={`${styles.assetScrollThumb} ${scrollThumb.visible ? styles.assetScrollThumbVisible : ""}`}
+            onPointerCancel={onScrollThumbPointerUp}
+            onPointerDown={onScrollThumbPointerDown}
+            onPointerMove={onScrollThumbPointerMove}
+            onPointerUp={onScrollThumbPointerUp}
+            style={{ height: scrollThumb.height, transform: `translateY(${scrollThumb.top}px)` }}
+          />
+        ) : null}
       </div>
 
       {historyOpen ? <HistoryAssetDialog currentProjectId={projectId} onClose={() => setHistoryOpen(false)} onReferenced={setAssets} /> : null}

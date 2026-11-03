@@ -157,9 +157,38 @@
 .inputPort { left: -7px; }
 .outputPort { right: -7px; background: #7569e8; box-shadow: 0 0 0 1px #7569e8; }
 
-.controls {
-  overflow: hidden;
-  border: 1px solid #e0e2eb;
-  border-radius: 10px;
-  box-shadow: 0 7px 18px rgba(34, 38, 55, 0.08);
+.locationTools { position: absolute; z-index: 8; bottom: 18px; left: 18px; display: flex; height: 54px; align-items: center; gap: 5px; padding: 7px 10px; border: 1px solid rgba(217,214,205,.95); border-radius: 14px; background: rgba(255,255,255,.96); box-shadow: 0 12px 30px rgba(45,42,35,.12); backdrop-filter: blur(12px); }
+.locationTools > button { display: grid; width: 36px; height: 36px; flex: 0 0 auto; place-items: center; border-radius: 9px; background: transparent; color: #45443f; cursor: pointer; }
+.locationTools > button:hover, .locationTools .locationButtonActive { background: #eee9dc; color: #8d661f; }
+.locationTools svg { width: 19px; height: 19px; }
+.zoomControl { display: flex; align-items: center; gap: 10px; margin: 0 3px; }
+.zoomControl input { width: 128px; height: 4px; margin: 0; accent-color: #9a6b1b; cursor: pointer; }
+.zoomControl output { width: 42px; color: #69675f; font-size: 13px; font-variant-numeric: tabular-nums; }
+.miniMap { right: auto !important; bottom: 84px !important; left: 18px !important; width: 242px !important; height: 152px !important; overflow: hidden; border: 1px solid #d9d5ca; border-radius: 13px; background: #fbfaf6 !important; box-shadow: 0 14px 32px rgba(45,42,35,.14); }
+.srOnly { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; }
+
+.shortcutBackdrop { position: absolute; z-index: 30; inset: 0; display: grid; place-items: center; padding: 24px; background: rgba(33,35,45,.28); backdrop-filter: blur(2px); }
+.shortcutDialog { width: min(620px, calc(100% - 32px)); overflow: hidden; border: 1px solid #dedfe6; border-radius: 16px; background: #fff; box-shadow: 0 24px 70px rgba(25,28,43,.24); }
+.shortcutDialog header { display: flex; align-items: center; padding: 17px 20px; border-bottom: 1px solid #ececf1; }
+.shortcutDialog header > div { display: grid; gap: 3px; }
+.shortcutDialog header strong { font-size: 15px; }
+.shortcutDialog header span { color: #9396a2; font-size: 10px; }
+.shortcutDialog header button { width: 30px; height: 30px; margin-left: auto; border-radius: 8px; background: transparent; color: #727681; cursor: pointer; font-size: 23px; line-height: 1; }
+.shortcutDialog header button:hover { background: #f2f2f5; }
+.shortcutList { display: grid; padding: 8px 20px; }
+.shortcutRow { display: grid; grid-template-columns: 170px minmax(0,1fr) auto; align-items: center; gap: 14px; min-height: 49px; border-bottom: 1px solid #f0f0f3; }
+.shortcutRow:last-child { border-bottom: 0; }
+.shortcutRow kbd { width: max-content; max-width: 170px; padding: 5px 8px; border: 1px solid #dfe0e6; border-bottom-width: 2px; border-radius: 6px; background: #f8f8fa; color: #3f424b; font-family: inherit; font-size: 10px; font-weight: 700; }
+.shortcutRow > span { color: #51545f; font-size: 11px; }
+.shortcutRow small { padding: 3px 7px; border-radius: 10px; font-size: 9px; }
+.shortcutReady { background: #e7f5ed; color: #27734b; }
+.shortcutPlanned { background: #f2f2f5; color: #8a8d98; }
+.shortcutDialog footer { display: flex; justify-content: flex-end; padding: 12px 20px; border-top: 1px solid #ececf1; }
+.shortcutDialog footer button { height: 34px; padding: 0 17px; border-radius: 8px; background: #6268ec; color: #fff; cursor: pointer; font-size: 11px; font-weight: 650; }
+
+@media (max-width: 760px) {
+  .zoomControl input { width: 82px; }
+  .miniMap { width: 210px !important; }
+  .shortcutRow { grid-template-columns: 1fr auto; gap: 7px; padding: 8px 0; }
+  .shortcutRow > span { grid-column: 1 / -1; grid-row: 2; }
 }

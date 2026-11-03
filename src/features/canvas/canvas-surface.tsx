@@ -5,7 +5,7 @@ import {
   addEdge,
   Background,
   BackgroundVariant,
-  Controls,
+  MiniMap,
   ReactFlow,
   type Connection,
   type Edge,
@@ -18,6 +18,7 @@ import {
   useNodesState,
 } from "@xyflow/react";
 import { ASSET_DRAG_TYPE, type AssetSummary } from "@/features/assets/types";
+import { Icon } from "@/app/components/app-icon";
 import type { CanvasDocumentState } from "@/features/projects/types";
 import { getCanvasModule } from "./module-registry";
 import { CanvasNodeActionsProvider } from "./node-actions-context";
@@ -47,6 +48,16 @@ type CanvasSurfaceProps = {
 type HistorySnapshot = { edges: Edge[]; nodes: CanvasNode[] };
 
 const nodeTypes = { group: GroupNode, module: ModuleNode };
+
+const shortcuts = [
+  { keys: "Ctrl（按住）", action: "临时切换选择 / 移动", status: "规划中" },
+  { keys: "滚轮", action: "缩放画布", status: "可用" },
+  { keys: "拖动", action: "框选多个节点（选择模式）", status: "可用" },
+  { keys: "Ctrl + C / Ctrl + V", action: "复制、粘贴节点或剪贴板文本 / 图片", status: "规划中" },
+  { keys: "Ctrl + G", action: "将选中节点打组", status: "规划中" },
+  { keys: "Ctrl + Shift + G", action: "解散选中的组", status: "规划中" },
+  { keys: "Delete / Backspace", action: "删除选中节点（选择模式）", status: "可用" },
+] as const;
 
 const initialNodes: CanvasNode[] = [
   {
@@ -156,6 +167,9 @@ export const CanvasSurface = forwardRef<CanvasSurfaceHandle, CanvasSurfaceProps>
   const [nodes, setNodes, onNodesChange] = useNodesState<CanvasNode>(startingNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(startingEdges);
   const [viewport, setViewport] = useState<Viewport>(initialDocument?.viewport ?? { x: 0, y: 0, zoom: 1 });
+  const [liveZoom, setLiveZoom] = useState(viewport.zoom);
+  const [miniMapOpen, setMiniMapOpen] = useState(false);
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const surfaceRef = useRef<HTMLDivElement>(null);
   const flowRef = useRef<ReactFlowInstance<CanvasNode, Edge> | null>(null);
   const insertionIndexRef = useRef(0);
@@ -367,6 +381,17 @@ export const CanvasSurface = forwardRef<CanvasSurfaceHandle, CanvasSurfaceProps>
     onNodesChange(changes);
   }, [onNodesChange]);
 
+  const centerOrigin = useCallback(() => {
+    const instance = flowRef.current;
+    if (!instance) return;
+    void instance.setCenter(0, 0, { duration: 450, zoom: instance.getZoom() });
+  }, []);
+
+  const changeZoom = useCallback((nextZoom: number) => {
+    setLiveZoom(nextZoom);
+    void flowRef.current?.zoomTo(nextZoom, { duration: 100 });
+  }, []);
+
   return (
     <div className={styles.surface} ref={surfaceRef}>
       <CanvasNodeActionsProvider value={nodeActions}>
@@ -381,6 +406,7 @@ export const CanvasSurface = forwardRef<CanvasSurfaceHandle, CanvasSurfaceProps>
           onDragOver={onDragOver}
           onDrop={onDrop}
           onNodeDragStop={onNodeDragStop}
+          onMove={(_event, nextViewport) => setLiveZoom(nextViewport.zoom)}
           onMoveEnd={(_event, nextViewport) => setViewport(nextViewport)}
           onInit={(instance) => { flowRef.current = instance; }}
           isValidConnection={isValidConnection}
@@ -397,9 +423,49 @@ export const CanvasSurface = forwardRef<CanvasSurfaceHandle, CanvasSurfaceProps>
           selectionOnDrag={interactionMode === "select"}
         >
           <Background variant={BackgroundVariant.Dots} gap={18} size={1.2} color="#d9dce6" />
-          <Controls className={styles.controls} showInteractive={false} />
+          {miniMapOpen ? (
+            <MiniMap
+              className={styles.miniMap}
+              maskColor="rgba(239, 240, 244, .72)"
+              nodeColor={(node) => node.type === "group" ? "#d7c8aa" : "#776fe4"}
+              nodeStrokeColor="#ffffff"
+              nodeStrokeWidth={2}
+              pannable
+              zoomable
+            />
+          ) : null}
+          <div className={`${styles.locationTools} nodrag nopan`}>
+            <button aria-label={miniMapOpen ? "隐藏小地图" : "显示小地图"} className={miniMapOpen ? styles.locationButtonActive : ""} onClick={() => setMiniMapOpen((open) => !open)} title={miniMapOpen ? "隐藏小地图" : "显示小地图"} type="button"><Icon name="compass" /></button>
+            <button aria-label="定位到画布原始中心" onClick={centerOrigin} title="定位到画布原始中心" type="button"><Icon name="focus" /></button>
+            <label className={styles.zoomControl}>
+              <span className={styles.srOnly}>调整画布缩放</span>
+              <input aria-label="调整画布缩放" max="2" min="0.2" onChange={(event) => changeZoom(Number(event.target.value))} step="0.01" type="range" value={liveZoom} />
+              <output>{Math.round(liveZoom * 100)}%</output>
+            </label>
+            <button aria-label="查看画布快捷键" onClick={() => setShortcutsOpen(true)} title="查看画布快捷键" type="button"><Icon name="help" /></button>
+          </div>
         </ReactFlow>
       </CanvasNodeActionsProvider>
+      {shortcutsOpen ? (
+        <div className={styles.shortcutBackdrop} role="presentation" onMouseDown={(event) => event.target === event.currentTarget && setShortcutsOpen(false)}>
+          <section aria-labelledby="canvas-shortcuts-title" aria-modal="true" className={styles.shortcutDialog} role="dialog">
+            <header>
+              <div><strong id="canvas-shortcuts-title">画布快捷键</strong><span>当前能力与后续计划一览</span></div>
+              <button aria-label="关闭快捷键弹窗" onClick={() => setShortcutsOpen(false)} type="button">×</button>
+            </header>
+            <div className={styles.shortcutList}>
+              {shortcuts.map((shortcut) => (
+                <div className={styles.shortcutRow} key={shortcut.keys}>
+                  <kbd>{shortcut.keys}</kbd>
+                  <span>{shortcut.action}</span>
+                  <small className={shortcut.status === "可用" ? styles.shortcutReady : styles.shortcutPlanned}>{shortcut.status}</small>
+                </div>
+              ))}
+            </div>
+            <footer><button onClick={() => setShortcutsOpen(false)} type="button">知道了</button></footer>
+          </section>
+        </div>
+      ) : null}
     </div>
   );
 });
