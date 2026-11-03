@@ -230,9 +230,10 @@
 .editorBody.leftCollapsed { grid-template-columns: 0 minmax(0, 1fr) 284px; }
 .editorBody.rightCollapsed { grid-template-columns: 218px minmax(0, 1fr) 0; }
 .editorBody.leftCollapsed.rightCollapsed { grid-template-columns: 0 minmax(0, 1fr) 0; }
-.toolPanel, .chatPanel { min-width: 0; overflow: hidden; background: #fff; transition: opacity 150ms ease; }
-.toolPanel { border-right: 1px solid var(--line); }
-.chatPanel { border-left: 1px solid var(--line); }
+.toolPanel, .chatPanel { min-width: 0; background: #fff; transition: opacity 150ms ease; }
+.toolPanel { position: relative; z-index: 12; overflow: visible; border-right: 1px solid var(--line); }
+.chatPanel { overflow: hidden; border-left: 1px solid var(--line); }
+.leftCollapsed .toolPanel { overflow: hidden; }
 .leftCollapsed .toolPanel, .rightCollapsed .chatPanel { opacity: 0; pointer-events: none; }
 .panelInner { display: flex; width: 218px; height: 100%; flex-direction: column; padding: 16px 12px; }
 .chatPanel .panelInner { width: 284px; }
