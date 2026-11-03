@@ -28,14 +28,27 @@ function formatSize(size: number | null) {
   return `${(size / 1024 / 1024).toFixed(1)} MB`;
 }
 
-function AssetCard({ asset }: { asset: AssetSummary }) {
+function AssetCard({ asset, onLocate }: { asset: AssetSummary; onLocate?: () => void }) {
   const onDragStart = (event: React.DragEvent<HTMLElement>) => {
     event.dataTransfer.effectAllowed = "copy";
     event.dataTransfer.setData(ASSET_DRAG_TYPE, JSON.stringify(asset));
   };
 
   return (
-    <article className={styles.assetCard} draggable onDragStart={onDragStart} title="拖到画布创建模块">
+    <article
+      className={`${styles.assetCard} ${onLocate ? styles.assetCardLocatable : ""}`}
+      draggable
+      onClick={onLocate}
+      onDragStart={onDragStart}
+      onKeyDown={(event) => {
+        if (!onLocate || (event.key !== "Enter" && event.key !== " ")) return;
+        event.preventDefault();
+        onLocate();
+      }}
+      role={onLocate ? "button" : undefined}
+      tabIndex={onLocate ? 0 : undefined}
+      title={onLocate ? "点击定位到画布位置；拖动可再次创建模块" : "拖到画布创建模块"}
+    >
       <div className={styles.assetPreview}>
         {asset.previewUrl ? (
           <Image alt={asset.name} fill sizes="90px" src={asset.previewUrl} unoptimized />
@@ -133,7 +146,12 @@ function HistoryAssetDialog({ currentProjectId, onClose, onReferenced }: {
   );
 }
 
-export function AssetPanel({ canvasAssetIds, projectId, refreshKey = 0 }: { canvasAssetIds: ReadonlySet<string>; projectId: string; refreshKey?: number }) {
+export function AssetPanel({ canvasAssetIds, onLocateAsset, projectId, refreshKey = 0 }: {
+  canvasAssetIds: ReadonlySet<string>;
+  onLocateAsset?: (assetId: string) => void;
+  projectId: string;
+  refreshKey?: number;
+}) {
   const [assets, setAssets] = useState<AssetSummary[]>([]);
   const [filter, setFilter] = useState<AssetFilter>("all");
   const [scope, setScope] = useState<AssetScope>("project");
@@ -211,15 +229,21 @@ export function AssetPanel({ canvasAssetIds, projectId, refreshKey = 0 }: { canv
       </div>
 
       {message ? <div className={styles.assetMessage} aria-live="polite">{message}</div> : null}
-      {pending ? <div className={styles.assetEmpty}>正在导入图片…</div> : visibleAssets.length ? (
-        <div className={styles.assetGrid}>{visibleAssets.map((asset) => <AssetCard asset={asset} key={asset.id} />)}</div>
-      ) : (
-        <div className={styles.assetEmpty}>
-          <Icon name="image" />
-          <strong>{assets.length ? "这个范围内没有匹配的资产" : "当前项目还没有资产"}</strong>
-          <span>{assets.length ? "可切换资产范围或调整筛选条件" : "点击“添加”从本地或历史画布加入"}</span>
+      <div className={styles.assetListViewport}>
+        <div className={styles.assetListScroller} data-asset-scroll-container>
+          <div className={styles.assetListContent}>
+            {pending ? <div className={styles.assetEmpty}>正在导入图片…</div> : visibleAssets.length ? (
+              <div className={styles.assetGrid}>{visibleAssets.map((asset) => <AssetCard asset={asset} key={asset.id} onLocate={scope === "on-canvas" ? () => onLocateAsset?.(asset.id) : undefined} />)}</div>
+            ) : (
+              <div className={styles.assetEmpty}>
+                <Icon name="image" />
+                <strong>{assets.length ? "这个范围内没有匹配的资产" : "当前项目还没有资产"}</strong>
+                <span>{assets.length ? "可切换资产范围或调整筛选条件" : "点击“添加”从本地或历史画布加入"}</span>
+              </div>
+            )}
+          </div>
         </div>
-      )}
+      </div>
 
       {historyOpen ? <HistoryAssetDialog currentProjectId={projectId} onClose={() => setHistoryOpen(false)} onReferenced={setAssets} /> : null}
     </div>

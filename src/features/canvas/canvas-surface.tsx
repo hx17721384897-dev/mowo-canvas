@@ -29,6 +29,7 @@ export type CanvasInteractionMode = "pan" | "select";
 export type CanvasInsertType = "audio" | "group" | "image" | "text" | "video";
 export type CanvasSurfaceHandle = {
   addNode: (type: CanvasInsertType) => void;
+  focusAsset: (assetId: string) => void;
   redo: () => void;
   undo: () => void;
 };
@@ -252,7 +253,17 @@ export const CanvasSurface = forwardRef<CanvasSurfaceHandle, CanvasSurfaceProps>
     });
   }, [commitPendingHistory, setNodes]);
 
-  useImperativeHandle(ref, () => ({ addNode, redo, undo }), [addNode, redo, undo]);
+  const focusAsset = useCallback((assetId: string) => {
+    const instance = flowRef.current;
+    if (!instance) return;
+    const matches = instance.getNodes().filter((node) => isModuleNode(node) && node.data.assetId === assetId);
+    if (!matches.length) return;
+    const matchIds = new Set(matches.map((node) => node.id));
+    setNodes((current) => current.map((node) => ({ ...node, selected: matchIds.has(node.id) })));
+    void instance.fitView({ nodes: matches, duration: 500, padding: 0.5, maxZoom: 1.2 });
+  }, [setNodes]);
+
+  useImperativeHandle(ref, () => ({ addNode, focusAsset, redo, undo }), [addNode, focusAsset, redo, undo]);
 
   const isValidConnection: IsValidConnection<Edge> = useCallback((connection) => {
     const sourceNode = nodes.find((node) => node.id === connection.source);

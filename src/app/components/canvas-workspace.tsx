@@ -222,7 +222,7 @@ export function CanvasWorkspace({ initialDocument, projectId, title }: CanvasWor
               </div>
               <button aria-label="折叠左侧工具栏" onClick={() => setLeftCollapsed(true)} type="button"><Icon name="chevron-left" /></button>
             </div>
-            {leftView === "assets" ? <AssetPanel canvasAssetIds={canvasAssetIds} projectId={projectId} refreshKey={assetRefreshKey} /> : (
+            {leftView === "assets" ? <AssetPanel canvasAssetIds={canvasAssetIds} onLocateAsset={(assetId) => canvasRef.current?.focusAsset(assetId)} projectId={projectId} refreshKey={assetRefreshKey} /> : (
               <div className={styles.toolPanelContent}>
                 <label className={styles.toolSearch}>
                   <Icon name="search" />

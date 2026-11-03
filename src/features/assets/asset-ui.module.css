@@ -1,5 +1,8 @@
-.assetPanel { min-height: 0; flex: 1; overflow-x: hidden; overflow-y: auto; padding-bottom: 16px; overscroll-behavior: contain; scrollbar-width: none; -ms-overflow-style: none; }
-.assetPanel::-webkit-scrollbar { display: none; width: 0; height: 0; }
+.assetPanel { display: flex; min-height: 0; flex: 1; flex-direction: column; }
+.assetListViewport { min-height: 0; flex: 1; overflow: hidden; }
+.assetListScroller { width: calc(100% + 16px); height: 100%; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: none; -ms-overflow-style: none; }
+.assetListScroller::-webkit-scrollbar { display: none; width: 0; height: 0; }
+.assetListContent { width: calc(100% - 16px); padding-bottom: 16px; }
 .assetActions { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px; }
 .assetSearch { display: flex; height: 34px; min-width: 0; align-items: center; gap: 7px; padding: 0 9px; border: 1px solid #e4e6ee; border-radius: 9px; background: #fafbfc; color: #898e9e; }
 .assetSearch svg { width: 14px; height: 14px; }
@@ -25,6 +28,8 @@
 .assetCard { min-width: 0; padding: 5px; border: 1px solid #e7e8ef; border-radius: 9px; background: #fff; cursor: grab; }
 .assetCard:active { cursor: grabbing; }
 .assetCard:hover { border-color: #bfc3f6; box-shadow: 0 6px 14px rgba(47, 52, 80, .08); }
+.assetCardLocatable { cursor: pointer; }
+.assetCardLocatable:focus-visible { border-color: #777cec; outline: 2px solid rgba(98,104,236,.22); outline-offset: 1px; }
 .assetPreview { position: relative; display: grid; aspect-ratio: 1.12; overflow: hidden; place-items: center; border-radius: 7px; background: #f0f1f5; color: #a6aab7; }
 .assetPreview img { object-fit: cover; }
 .assetPreview > svg { width: 22px; height: 22px; }
