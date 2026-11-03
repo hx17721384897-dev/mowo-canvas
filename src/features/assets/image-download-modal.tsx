@@ -183,7 +183,7 @@ export function ImageDownloadModal({ projectId, onClose, onImported }: {
             <div className={styles.previewStage}>
               {current ? (
                 <>
-                  <Image key={`${current.id}-${playbackKey}`} alt={current.name} className={!playing ? styles.previewHidden : ""} fill ref={imageRef} sizes="520px" src={current.previewUrl} unoptimized />
+                  <Image key={`${current.id}-${playbackKey}`} alt={current.name} className={!playing ? styles.previewHidden : ""} fill ref={imageRef} sizes="520px" src={`${current.previewUrl}?playback=${playbackKey}`} unoptimized />
                   <canvas className={playing ? styles.previewHidden : ""} ref={canvasRef} />
                 </>
               ) : <><Icon name="image" /><span>{isBusy ? "正在准备下载结果" : "下载完成后在这里预览静态图或动图"}</span></>}

@@ -4,6 +4,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { basename, join } from "node:path";
 import { unzipSync } from "fflate";
 import { createDownloadHttpClient } from "./http-client";
+import { isAnimatedPng, isPng, makeApngLoopForever } from "./apng";
 import type { DownloadContext, DownloadedFile, DownloadResult, ImageDownloadAdapter } from "./types";
 
 const MAX_METADATA_BYTES = 2 * 1024 * 1024;
@@ -38,15 +39,6 @@ function pickTitle(meta: LineMeta | null, fallback: string) {
   return titles["zh-Hant"] || titles["zh-Hans"] || titles.en || Object.values(titles).find(Boolean) || fallback;
 }
 
-function isPng(data: Uint8Array) {
-  return data.length >= 8 && data[0] === 0x89 && data[1] === 0x50 && data[2] === 0x4e && data[3] === 0x47
-    && data[4] === 0x0d && data[5] === 0x0a && data[6] === 0x1a && data[7] === 0x0a;
-}
-
-function isAnimatedPng(data: Uint8Array) {
-  return Buffer.from(data).includes(Buffer.from("acTL", "ascii"));
-}
-
 function safeFileStem(value: string, fallback: string) {
   const cleaned = basename(value).replace(/[^a-zA-Z0-9_-]/g, "_").replace(/^_+|_+$/g, "");
   return cleaned.slice(0, 80) || fallback;
@@ -70,10 +62,11 @@ async function downloadSticker(id: string, position: number, directory: string, 
       const data = await getBytes(url, MAX_IMAGE_BYTES, signal);
       if (!isPng(data)) continue;
       const animated = isAnimatedPng(data);
+      const storedData = animated ? makeApngLoopForever(data) : data;
       const name = `${safeFileStem(id, `sticker_${position + 1}`)}.${animated ? "apng" : "png"}`;
       const absolutePath = join(/* turbopackIgnore: true */ directory, name);
-      await writeFile(absolutePath, data, { flag: "wx" });
-      return { externalId: id, name, absolutePath, mimeType: "image/png", size: data.length, animated, position } satisfies DownloadedFile;
+      await writeFile(absolutePath, storedData, { flag: "wx" });
+      return { externalId: id, name, absolutePath, mimeType: "image/png", size: storedData.length, animated, position } satisfies DownloadedFile;
     } catch (error) {
       if (signal.aborted) throw error;
     }
@@ -155,11 +148,12 @@ async function downloadEmojiPackage(source: LineSource, context: DownloadContext
     const [entryName, data] = sorted[position];
     if (!isPng(data)) continue;
     const animated = isAnimatedPng(data);
+    const storedData = animated ? makeApngLoopForever(data) : data;
     const stem = safeFileStem(basename(entryName, ".png"), `emoji_${position + 1}`);
     const name = `${stem}.${animated ? "apng" : "png"}`;
     const absolutePath = join(/* turbopackIgnore: true */ context.directory, name);
-    await writeFile(absolutePath, data, { flag: "wx" });
-    files.push({ externalId: stem, name, absolutePath, mimeType: "image/png", size: data.length, animated, position });
+    await writeFile(absolutePath, storedData, { flag: "wx" });
+    files.push({ externalId: stem, name, absolutePath, mimeType: "image/png", size: storedData.length, animated, position });
     context.onProgress(position + 1, sorted.length);
   }
   if (!files.length) throw new Error("LINE 表情包没有通过文件校验的图片");

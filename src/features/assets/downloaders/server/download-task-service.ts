@@ -10,6 +10,7 @@ import { ensureAssetDataPaths, getAssetDataPaths, resolveStoredAssetPath } from 
 import { getAssetDatabase } from "../../server/database";
 import { downloadItems, downloadTasks } from "../../server/schema";
 import { DownloadHttpError } from "./http-client";
+import { makeApngLoopForever } from "./apng";
 import { lineDownloadAdapter } from "./line-adapter";
 
 const runners = globalThis as typeof globalThis & {
@@ -173,7 +174,7 @@ export async function getDownloadItemContent(itemId: string) {
   const database = await getAssetDatabase();
   const item = database.select().from(downloadItems).where(eq(downloadItems.id, itemId)).get();
   if (!item) return null;
-  return { path: resolveStoredAssetPath(item.relativePath), mimeType: item.mimeType, name: item.name };
+  return { path: resolveStoredAssetPath(item.relativePath), mimeType: item.mimeType, name: item.name, animated: item.animated };
 }
 
 export async function importDownloadTask(taskId: string, itemIds: string[], discardUnselected: boolean) {
@@ -188,13 +189,16 @@ export async function importDownloadTask(taskId: string, itemIds: string[], disc
 
   database.update(downloadTasks).set({ status: "importing", updatedAt: new Date() }).where(eq(downloadTasks.id, taskId)).run();
   try {
-    const sources = await Promise.all(selected.map(async (item) => ({
-      buffer: await readFile(resolveStoredAssetPath(item.relativePath)),
-      name: item.name,
-      mimeType: "image/png" as const,
-      sourceType: "line",
-      sourceUrl: task.sourceUrl,
-    })));
+    const sources = await Promise.all(selected.map(async (item) => {
+      const buffer = await readFile(resolveStoredAssetPath(item.relativePath));
+      return {
+        buffer: item.animated ? makeApngLoopForever(buffer) : buffer,
+        name: item.name,
+        mimeType: "image/png" as const,
+        sourceType: "line",
+        sourceUrl: task.sourceUrl,
+      };
+    }));
     const result = await importImageBuffers(task.projectId, sources, {
       name: task.title ?? "LINE 图片集合",
       sourceType: "line",
