@@ -60,7 +60,7 @@
 .dialogFooter .primaryAction { border-color: #6268ec; background: #6268ec; color: #fff; }
 .dialogFooter button:disabled { cursor: not-allowed; opacity: .48; }
 
-.downloadDialog { width: min(980px, 92vw); max-height: 90vh; overflow: hidden; border: 1px solid #dfe1e9; border-radius: 16px; background: #fff; box-shadow: 0 24px 70px rgba(27, 31, 48, .24); }
+.downloadDialog { width: min(920px, calc(100vw - 40px)); max-height: calc(100vh - 40px); overflow: hidden; border: 1px solid #dfe1e9; border-radius: 16px; background: #fff; box-shadow: 0 24px 70px rgba(27, 31, 48, .24); }
 .downloadTitleIcon { display: grid; width: 34px; height: 34px; place-items: center; border-radius: 9px; background: #e9efff; color: #4f73de; }
 .downloadTitleIcon svg { width: 18px; height: 18px; }
 .urlBar { display: flex; align-items: center; gap: 9px; margin: 14px 18px 0; padding-left: 11px; border: 1px solid #dfe2eb; border-radius: 10px; color: #8b90a0; }
@@ -70,15 +70,14 @@
 .urlBar button:disabled { cursor: not-allowed; opacity: .55; }
 .downloadNotice { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 9px 18px 0; padding: 8px 10px; border-radius: 8px; background: #fff7e8; color: #986a22; font-size: 10px; }
 .downloadError { background: #fff0f0; color: #b04a4a; }
-.downloadBody { display: grid; min-height: 460px; grid-template-columns: 56% 44%; padding: 16px 18px; }
+.downloadBody { display: grid; min-height: 420px; grid-template-columns: minmax(0, 48%) minmax(0, 52%); padding: 16px 18px; }
 .previewPane { padding-right: 18px; border-right: 1px solid #e8e9ef; }
-.previewStage { display: flex; height: 330px; align-items: center; justify-content: center; flex-direction: column; gap: 9px; border: 1px solid #e5e7ef; border-radius: 11px; background-color: #f7f8fb; background-image: linear-gradient(45deg, #ebecef 25%, transparent 25%), linear-gradient(-45deg, #ebecef 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #ebecef 75%), linear-gradient(-45deg, transparent 75%, #ebecef 75%); background-position: 0 0, 0 8px, 8px -8px, -8px 0; background-size: 16px 16px; color: #9a9eac; }
+.previewStage { position: relative; display: flex; height: 300px; align-items: center; justify-content: center; overflow: hidden; flex-direction: column; gap: 9px; border: 1px solid #e5e7ef; border-radius: 11px; background-color: #f7f8fb; background-image: linear-gradient(45deg, #ebecef 25%, transparent 25%), linear-gradient(-45deg, #ebecef 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #ebecef 75%), linear-gradient(-45deg, transparent 75%, #ebecef 75%); background-position: 0 0, 0 8px, 8px -8px, -8px 0; background-size: 16px 16px; color: #9a9eac; isolation: isolate; }
 .previewStage svg { width: 36px; height: 36px; }
 .previewStage span { padding: 6px 9px; border-radius: 6px; background: rgba(255,255,255,.84); font-size: 10px; }
 .previewStage img { object-fit: contain; }
-.previewStage canvas { width: 100%; height: 100%; object-fit: contain; }
+.previewStage canvas { max-width: 100%; max-height: 100%; width: auto; height: auto; object-fit: contain; }
 .previewStage .previewHidden { visibility: hidden; }
-.previewStage .animatedBadge { position: absolute; z-index: 2; right: 8px; bottom: 8px; background: rgba(31,34,48,.72); color: #fff; }
 .previewControls { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 12px; }
 .previewControls button { display: flex; height: 32px; align-items: center; gap: 4px; padding: 0 10px; border: 1px solid #e1e3eb; border-radius: 8px; background: #fff; font-size: 10px; }
 .previewControls button svg { width: 13px; height: 13px; }
@@ -89,14 +88,16 @@
 .previewMeta dd { margin: 0; color: #555a69; }
 .downloadSelection { padding-left: 18px; }
 .downloadSelection > header { display: flex; align-items: center; gap: 8px; height: 34px; }
-.downloadSelection header strong { margin-right: auto; font-size: 12px; }
+.selectionHeading { display: flex; min-width: 0; align-items: center; gap: 7px; margin-right: auto; }
+.downloadSelection header strong { font-size: 12px; }
 .downloadSelection header span { color: #8e92a1; font-size: 9px; }
+.downloadSelection header .animatedBadge { padding: 3px 6px; border-radius: 5px; background: #eef0ff; color: #5d63d9; font-size: 8px; font-weight: 650; white-space: nowrap; }
 .downloadSelection header button { height: 28px; padding: 0 9px; border: 1px solid #e1e3eb; border-radius: 7px; background: #fff; font-size: 9px; }
 .thumbnailEmpty { display: flex; height: 380px; align-items: center; justify-content: center; flex-direction: column; gap: 7px; border: 1px dashed #dfe1e9; border-radius: 10px; color: #999dab; }
 .thumbnailEmpty svg { width: 26px; height: 26px; }
 .thumbnailEmpty span { font-size: 10px; font-weight: 650; }
 .thumbnailEmpty small { font-size: 9px; }
-.thumbnailGrid { display: grid; max-height: 380px; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; padding: 3px; overflow-y: auto; }
+.thumbnailGrid { display: grid; max-height: 340px; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; padding: 3px; overflow-y: auto; }
 .thumbnailCard { position: relative; min-width: 0; padding: 4px; border: 1px solid #e4e6ed; border-radius: 8px; background: #fff; cursor: pointer; transition: opacity 140ms ease, border-color 140ms ease, transform 140ms ease; }
 .thumbnailCard:hover { transform: translateY(-1px); border-color: #bfc3f3; }
 .thumbnailActive { border-color: #6b70e8; box-shadow: 0 0 0 2px rgba(98,104,236,.12); }

@@ -185,7 +185,6 @@ export function ImageDownloadModal({ projectId, onClose, onImported }: {
                 <>
                   <Image key={`${current.id}-${playbackKey}`} alt={current.name} className={!playing ? styles.previewHidden : ""} fill ref={imageRef} sizes="520px" src={current.previewUrl} unoptimized />
                   <canvas className={playing ? styles.previewHidden : ""} ref={canvasRef} />
-                  {current.animated ? <span className={styles.animatedBadge}>APNG 动图</span> : null}
                 </>
               ) : <><Icon name="image" /><span>{isBusy ? "正在准备下载结果" : "下载完成后在这里预览静态图或动图"}</span></>}
             </div>
@@ -198,7 +197,14 @@ export function ImageDownloadModal({ projectId, onClose, onImported }: {
             <dl className={styles.previewMeta}><div><dt>文件名</dt><dd>{current?.name ?? "—"}</dd></div><div><dt>格式</dt><dd>{current?.animated ? "APNG" : current ? "PNG" : "—"}</dd></div><div><dt>大小</dt><dd>{current ? formatSize(current.size) : "—"}</dd></div></dl>
           </section>
           <section className={styles.downloadSelection}>
-            <header><strong>已下载图片</strong><button disabled={!task?.items.length} onClick={() => setSelectionMode((value) => !value)} type="button">{selectionMode ? "完成选择" : "选择"}</button><span>已选择 {selected.size} / {task?.items.length ?? 0}</span></header>
+            <header>
+              <div className={styles.selectionHeading}>
+                <strong>已下载图片</strong>
+                {current?.animated ? <span className={styles.animatedBadge}>APNG 动图</span> : null}
+              </div>
+              <button disabled={!task?.items.length} onClick={() => setSelectionMode((value) => !value)} type="button">{selectionMode ? "完成选择" : "选择"}</button>
+              <span>已选择 {selected.size} / {task?.items.length ?? 0}</span>
+            </header>
             {task?.items.length ? <div className={styles.thumbnailGrid}>
               {task.items.map((item, index) => {
                 const checked = selected.has(item.id);
