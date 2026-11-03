@@ -13,6 +13,7 @@ function formatSize(size: number) {
 
 const activeStatuses = new Set(["queued", "resolving", "downloading", "importing"]);
 const resumableStatuses = new Set(["queued", "resolving", "downloading", "ready"]);
+const cancellableStatuses = new Set(["queued", "resolving", "downloading"]);
 
 export function ImageDownloadModal({ projectId, onClose, onImported }: {
   projectId: string;
@@ -28,6 +29,7 @@ export function ImageDownloadModal({ projectId, onClose, onImported }: {
   const [playing, setPlaying] = useState(true);
   const [playbackKey, setPlaybackKey] = useState(0);
   const [confirmImport, setConfirmImport] = useState(false);
+  const [confirmClose, setConfirmClose] = useState(false);
   const [importing, setImporting] = useState(false);
   const imageRef = useRef<HTMLImageElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -108,8 +110,16 @@ export function ImageDownloadModal({ projectId, onClose, onImported }: {
     }
   };
 
-  const closeOrCancel = async () => {
-    if (task && resumableStatuses.has(task.status)) {
+  const requestClose = () => {
+    if (task?.status === "ready" && task.items.length) {
+      setConfirmClose(true);
+      return;
+    }
+    onClose();
+  };
+
+  const cancelDownload = async () => {
+    if (task && cancellableStatuses.has(task.status)) {
       await fetch(`/api/download-tasks/${task.id}`, { method: "DELETE" }).catch(() => undefined);
     }
     window.sessionStorage.removeItem(storageKey);
@@ -162,12 +172,12 @@ export function ImageDownloadModal({ projectId, onClose, onImported }: {
   };
 
   return (
-    <div className={styles.dialogBackdrop} role="presentation" onMouseDown={(event) => event.target === event.currentTarget && void closeOrCancel()}>
+    <div className={styles.dialogBackdrop} role="presentation">
       <section aria-modal="true" className={styles.downloadDialog} role="dialog">
         <header className={styles.downloadHeader}>
           <span className={styles.downloadTitleIcon}><Icon name="download" /></span>
           <div><strong>下载图片</strong><span>LINE 贴纸与表情包 · 导入前预览并选择</span></div>
-          <button aria-label="关闭" onClick={() => void closeOrCancel()} type="button">×</button>
+          <button aria-label="关闭" onClick={requestClose} type="button">×</button>
         </header>
         <div className={styles.urlBar}>
           <Icon name="layers" />
@@ -223,9 +233,23 @@ export function ImageDownloadModal({ projectId, onClose, onImported }: {
         </div>
         <footer className={styles.dialogFooter}>
           <span>{task?.id ? `任务 ${task.id.slice(0, 8)}` : "下载文件先进入临时区，确认后才加入资产"}</span>
-          <button onClick={() => void closeOrCancel()} type="button">取消</button>
+          <button disabled={importing} onClick={() => task && cancellableStatuses.has(task.status) ? void cancelDownload() : requestClose()} type="button">
+            {task && cancellableStatuses.has(task.status) ? "取消下载" : "关闭"}
+          </button>
           <button className={styles.primaryAction} disabled={task?.status !== "ready" || !selected.size || importing} onClick={() => unselectedCount ? setConfirmImport(true) : void importSelected(true)} type="button">{importing ? "导入中…" : "导入"}</button>
         </footer>
+        {confirmClose ? <div className={styles.closeConfirmBackdrop}>
+          <section aria-labelledby="close-download-title" aria-modal="true" className={styles.closeConfirm} role="alertdialog">
+            <div>
+              <strong id="close-download-title">确认关闭下载窗口？</strong>
+              <span>已下载的 {task?.items.length ?? 0} 项会继续保留。重新打开后可以继续选择，不需要再次下载。</span>
+            </div>
+            <footer>
+              <button onClick={() => setConfirmClose(false)} type="button">继续处理</button>
+              <button className={styles.confirmCloseAction} onClick={onClose} type="button">确认关闭</button>
+            </footer>
+          </section>
+        </div> : null}
         {confirmImport ? <div className={styles.importConfirm}>
           <div><strong>如何处理 {unselectedCount} 个未勾选文件？</strong><span>选中的图片会加入当前项目资产。</span></div>
           <button disabled={importing} onClick={() => void importSelected(false)} type="button">保留到下载归档</button>

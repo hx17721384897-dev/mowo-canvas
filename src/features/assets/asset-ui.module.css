@@ -114,6 +114,14 @@
 .importConfirm span { color: #9296a4; font-size: 9px; }
 .importConfirm button { height: 31px; padding: 0 9px; border: 1px solid #e0e2e9; border-radius: 7px; background: #fff; cursor: pointer; font-size: 9px; }
 .importConfirm .dangerAction { border-color: #e46a6a; background: #e95f5f; color: #fff; }
+.closeConfirmBackdrop { position: absolute; z-index: 8; inset: 0; display: grid; place-items: center; padding: 20px; border-radius: inherit; background: rgba(35,39,55,.22); backdrop-filter: blur(1px); }
+.closeConfirm { width: min(390px, 100%); padding: 18px; border: 1px solid #dfe1e9; border-radius: 12px; background: #fff; box-shadow: 0 18px 46px rgba(29,33,50,.22); }
+.closeConfirm > div { display: grid; gap: 7px; }
+.closeConfirm strong { font-size: 13px; }
+.closeConfirm span { color: #777c8c; font-size: 10px; line-height: 1.6; }
+.closeConfirm footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+.closeConfirm button { height: 32px; padding: 0 12px; border: 1px solid #e0e2e9; border-radius: 8px; background: #fff; cursor: pointer; font-size: 10px; font-weight: 650; }
+.closeConfirm .confirmCloseAction { border-color: #6268ec; background: #6268ec; color: #fff; }
 
 @media (max-width: 820px) {
   .downloadBody { grid-template-columns: 1fr; overflow-y: auto; }
