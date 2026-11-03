@@ -16,3 +16,4 @@ ADR 只记录会长期影响项目的重要且已接受决定。普通实现细�
 - `0002-nextjs-react-flow.md`：采用 Next.js 与 React Flow。
 - `0003-delay-authentication.md`：延后账户系统。
 - `0004-platform-download-adapters.md`：平台下载采用适配器与本地持久任务。
+- `0005-content-addressed-derived-assets.md`：派生图片采用内容寻址存储，业务分组与来源关系进入数据库。
