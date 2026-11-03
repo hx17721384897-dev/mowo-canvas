@@ -1,4 +1,5 @@
-.assetPanel { min-height: 0; flex: 1; overflow-y: auto; padding-bottom: 16px; }
+.assetPanel { min-height: 0; flex: 1; overflow-x: hidden; overflow-y: auto; padding-bottom: 16px; overscroll-behavior: contain; scrollbar-width: none; -ms-overflow-style: none; }
+.assetPanel::-webkit-scrollbar { display: none; width: 0; height: 0; }
 .assetActions { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px; }
 .assetSearch { display: flex; height: 34px; min-width: 0; align-items: center; gap: 7px; padding: 0 9px; border: 1px solid #e4e6ee; border-radius: 9px; background: #fafbfc; color: #898e9e; }
 .assetSearch svg { width: 14px; height: 14px; }
