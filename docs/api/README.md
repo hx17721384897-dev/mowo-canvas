@@ -4,6 +4,7 @@
 
 - `assets.md`：本地资产查询、图片导入、跨项目引用与内容读取。
 - `download-tasks.md`：LINE 图片下载任务、进度、预览、取消与资产导入。
+- `projects-and-canvas.md`：本地项目创建、列表以及画布文档读取与保存。
 
 ## 每个接口必须记录
 

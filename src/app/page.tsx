@@ -1,5 +1,8 @@
 import Link from "next/link";
+import { connection } from "next/server";
+import { listProjects } from "@/features/projects/server/project-service";
 import { Icon, type IconName } from "./components/app-icon";
+import { NewCanvasButton } from "./components/new-canvas-button";
 import styles from "./ui-shell.module.css";
 
 const navigation: Array<{ icon: IconName; label: string; active?: boolean }> = [
@@ -8,16 +11,17 @@ const navigation: Array<{ icon: IconName; label: string; active?: boolean }> = [
   { icon: "layers", label: "技能" },
 ];
 
-const projects = [
-  { id: "emoji-workflow", title: "表情包工作流", meta: "今天 14:32 更新", tone: "violet", kind: "图片处理" },
-  { id: "storyboard", title: "动画分镜整理", meta: "昨天 21:08 更新", tone: "blue", kind: "内容创作" },
-  { id: "brand-assets", title: "品牌素材处理", meta: "10 月 30 日更新", tone: "mint", kind: "素材整理" },
-  { id: "video-notes", title: "视频灵感与脚本", meta: "10 月 28 日更新", tone: "amber", kind: "视频" },
-  { id: "product-research", title: "产品调研画布", meta: "10 月 24 日更新", tone: "rose", kind: "研究" },
-  { id: "weekly-plan", title: "本周工作规划", meta: "10 月 21 日更新", tone: "indigo", kind: "规划" },
-];
+const tones = ["violet", "blue", "mint", "amber", "rose", "indigo"] as const;
 
-export default function Home() {
+export const instant = false;
+
+function formatUpdatedAt(value: string) {
+  return `${new Intl.DateTimeFormat("zh-CN", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "Asia/Shanghai" }).format(new Date(value))} 更新`;
+}
+
+export default async function Home() {
+  await connection();
+  const projects = await listProjects();
   return (
     <main className={styles.homeShell}>
       <aside className={styles.homeSidebar}>
@@ -48,10 +52,7 @@ export default function Home() {
             <h1>我的画布</h1>
             <p>继续最近的工作流，或从一张空白画布开始。</p>
           </div>
-          <Link className={styles.primaryButton} href="/canvas/new">
-            <Icon name="plus" />
-            新建画布
-          </Link>
+          <NewCanvasButton className={styles.primaryButton} />
         </header>
 
         <div className={styles.projectControls}>
@@ -66,15 +67,11 @@ export default function Home() {
         </div>
 
         <div className={styles.projectGrid}>
-          <Link className={styles.newCanvasCard} href="/canvas/new">
-            <span className={styles.newCanvasIcon}><Icon name="plus" /></span>
-            <strong>新建画布</strong>
-            <span>创建一个新的空白工作流</span>
-          </Link>
+          <NewCanvasButton card className={styles.newCanvasCard} />
 
-          {projects.map((project) => (
+          {projects.map((project, index) => (
             <Link className={styles.projectCard} href={`/canvas/${project.id}`} key={project.id}>
-              <div className={`${styles.projectPreview} ${styles[`preview_${project.tone}`]}`}>
+              <div className={`${styles.projectPreview} ${styles[`preview_${tones[index % tones.length]}`]}`}>
                 <div className={styles.previewTopRow}><span /><span /><span /></div>
                 <div className={styles.previewWorkspace}>
                   <span className={styles.previewNodeA} />
@@ -84,10 +81,10 @@ export default function Home() {
                 </div>
               </div>
               <div className={styles.projectInfo}>
-                <div><h2>{project.title}</h2><p>{project.meta}</p></div>
+                <div><h2>{project.name}</h2><p>{formatUpdatedAt(project.updatedAt)}</p></div>
                 <span className={styles.moreButton} aria-hidden="true"><Icon name="more" /></span>
               </div>
-              <span className={styles.projectTag}>{project.kind}</span>
+              <span className={styles.projectTag}>{project.assetCount ? `${project.assetCount} 项资产` : "空白画布"}</span>
             </Link>
           ))}
         </div>

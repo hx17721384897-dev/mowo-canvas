@@ -25,8 +25,9 @@
 - `nodes`
 - `edges`
 - `viewport`
-- `revision`
 - `updatedAt`
+
+第一版本地单用户数据不保存 `revision`；它是未来多窗口或多人并发编辑时才引入的冲突控制字段。
 
 ### Asset
 
@@ -83,7 +84,6 @@
 ```ts
 type CanvasDocument = {
   schemaVersion: number;
-  revision: number;
   nodes: Array<{
     id: string;
     type: string;
@@ -106,10 +106,10 @@ type CanvasDocument = {
 - 前端操作立即更新内存状态。
 - 停止操作后进行防抖保存，避免每个像素移动都写数据库。
 - 界面显示“未保存、保存中、已保存、保存失败”。
-- `revision` 用于检测旧数据覆盖新数据。
+- 当前本地单用户版本采用整份文档覆盖；未来支持多窗口或多人并发编辑时增加 `revision` 检测旧数据覆盖。
 - 导入前验证 `schemaVersion` 与数据结构。
 
-当前使用 Drizzle ORM 管理 SQLite。首个迁移包含 `projects`、`assets`、`project_assets`、`asset_collections` 和 `asset_collection_items`；迁移文件受 Git 管理，实际数据库不进入仓库。`deletedAt` 已为回收站预留，但删除与自动清理流程尚未开放。
+当前使用 Drizzle ORM 管理 SQLite。迁移包含 `projects`、`canvas_documents`、`assets`、`project_assets`、`asset_collections`、`asset_collection_items` 和下载任务表；迁移文件受 Git 管理，实际数据库不进入仓库。`canvas_documents` 按项目保存版本、节点、连线和视口 JSON。`deletedAt` 已为回收站预留，但删除与自动清理流程尚未开放。
 
 ### DownloadTask 与 DownloadItem
 

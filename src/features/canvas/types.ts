@@ -17,6 +17,7 @@ export type CanvasModuleData = {
   previewUrl?: string;
   title?: string;
   detail?: string;
+  naturalSizeApplied?: boolean;
   variant?: "warm" | "cool";
 };
 

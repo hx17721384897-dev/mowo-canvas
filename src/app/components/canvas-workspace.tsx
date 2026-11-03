@@ -1,14 +1,15 @@
 "use client";
 
-import { useCallback, useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent } from "react";
 import Link from "next/link";
 import { CanvasSurface } from "@/features/canvas/canvas-surface";
 import { AssetPanel } from "@/features/assets/asset-panel";
 import { ImageDownloadModal } from "@/features/assets/image-download-modal";
+import type { CanvasDocumentState } from "@/features/projects/types";
 import { Icon, type IconName } from "./app-icon";
 import styles from "../ui-shell.module.css";
 
-type CanvasWorkspaceProps = { projectId: string; title: string };
+type CanvasWorkspaceProps = { initialDocument: CanvasDocumentState | null; projectId: string; title: string };
 type ResizeSide = "left" | "right";
 
 const panelLimits = {
@@ -43,7 +44,7 @@ const toolGroups: Array<{
   },
 ];
 
-export function CanvasWorkspace({ projectId, title }: CanvasWorkspaceProps) {
+export function CanvasWorkspace({ initialDocument, projectId, title }: CanvasWorkspaceProps) {
   const [leftCollapsed, setLeftCollapsed] = useState(false);
   const [rightCollapsed, setRightCollapsed] = useState(false);
   const [leftView, setLeftView] = useState<"tools" | "assets">("tools");
@@ -60,6 +61,62 @@ export function CanvasWorkspace({ projectId, title }: CanvasWorkspaceProps) {
     previousCursor: string;
     previousUserSelect: string;
   } | null>(null);
+  const documentRef = useRef<CanvasDocumentState | null>(initialDocument);
+  const lastSavedDocumentRef = useRef(initialDocument ? JSON.stringify(initialDocument) : "");
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [saveStatus, setSaveStatus] = useState<"saved" | "dirty" | "saving" | "failed">("saved");
+
+  const persistDocument = useCallback(async (document = documentRef.current) => {
+    if (!document) return;
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = null;
+    const serialized = JSON.stringify(document);
+    if (serialized === lastSavedDocumentRef.current) {
+      setSaveStatus("saved");
+      return;
+    }
+    setSaveStatus("saving");
+    try {
+      const response = await fetch(`/api/projects/${encodeURIComponent(projectId)}/canvas`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: serialized,
+      });
+      if (!response.ok) throw new Error("保存失败");
+      lastSavedDocumentRef.current = serialized;
+      setSaveStatus("saved");
+    } catch {
+      setSaveStatus("failed");
+    }
+  }, [projectId]);
+
+  const handleDocumentChange = useCallback((document: CanvasDocumentState) => {
+    documentRef.current = document;
+    const serialized = JSON.stringify(document);
+    if (serialized === lastSavedDocumentRef.current) return;
+    setSaveStatus("dirty");
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(() => void persistDocument(document), 700);
+  }, [persistDocument]);
+
+  useEffect(() => {
+    const saveBeforeLeaving = () => {
+      const document = documentRef.current;
+      if (!document || JSON.stringify(document) === lastSavedDocumentRef.current) return;
+      void fetch(`/api/projects/${encodeURIComponent(projectId)}/canvas`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(document),
+        keepalive: true,
+      });
+    };
+    window.addEventListener("pagehide", saveBeforeLeaving);
+    return () => {
+      window.removeEventListener("pagehide", saveBeforeLeaving);
+      saveBeforeLeaving();
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    };
+  }, [projectId]);
 
   const clampPanelWidth = useCallback((side: ResizeSide, width: number) => {
     const limits = panelLimits[side];
@@ -146,8 +203,8 @@ export function CanvasWorkspace({ projectId, title }: CanvasWorkspaceProps) {
         <button className={styles.iconButton} aria-label="撤销" type="button"><Icon name="undo" /></button>
         <button className={styles.iconButton} aria-label="重做" type="button"><Icon name="redo" /></button>
         <span className={styles.topbarDivider} />
-        <span className={styles.saveState}><span className={styles.saveDot} />已保存</span>
-        <button className={styles.topbarPrimary} type="button"><Icon name="save" />保存</button>
+        <span className={styles.saveState}><span className={`${styles.saveDot} ${saveStatus === "failed" ? styles.saveDotFailed : saveStatus !== "saved" ? styles.saveDotPending : ""}`} />{saveStatus === "saved" ? "已保存" : saveStatus === "saving" ? "保存中…" : saveStatus === "failed" ? "保存失败" : "未保存"}</span>
+        <button className={styles.topbarPrimary} disabled={saveStatus === "saving"} onClick={() => void persistDocument()} type="button"><Icon name="save" />保存</button>
         <button className={styles.topbarAction} type="button"><Icon name="upload" />导出</button>
       </header>
 
@@ -215,7 +272,7 @@ export function CanvasWorkspace({ projectId, title }: CanvasWorkspaceProps) {
           <button className={`${styles.expandPanelButton} ${styles.expandLeft}`} aria-label="展开左侧工具栏" onClick={() => setLeftCollapsed(false)} type="button"><Icon name="chevron-right" /></button>
           <button className={`${styles.expandPanelButton} ${styles.expandRight}`} aria-label="展开右侧对话栏" onClick={() => setRightCollapsed(false)} type="button"><Icon name="chevron-left" /></button>
           <div className={styles.canvasHint}><span>交互画布</span> · 拖动、缩放与连线</div>
-          <CanvasSurface onAssetIdsChange={handleCanvasAssetIdsChange} />
+          <CanvasSurface initialDocument={initialDocument} onAssetIdsChange={handleCanvasAssetIdsChange} onDocumentChange={handleDocumentChange} />
 
           <nav className={styles.bottomToolbar} aria-label="常用工具">
             <button className={styles.bottomTool} type="button"><Icon name="plus" /><span>插入</span><Icon name="chevron-down" /></button>

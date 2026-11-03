@@ -3,11 +3,12 @@ import "server-only";
 import { createHash, randomUUID } from "node:crypto";
 import { mkdir, rename, rm, writeFile } from "node:fs/promises";
 import { basename, dirname, extname, join, relative } from "node:path";
-import { and, count, desc, eq, inArray, isNull, ne } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull } from "drizzle-orm";
 import type { AssetProjectSummary, AssetSummary } from "../types";
+import { ensureKnownProjects, listProjects } from "@/features/projects/server/project-service";
 import { ensureAssetDataPaths, getAssetDataPaths, resolveStoredAssetPath } from "./data-paths";
 import { getAssetDatabase } from "./database";
-import { assetCollectionItems, assetCollections, assets, projectAssets, projects } from "./schema";
+import { assetCollectionItems, assetCollections, assets, projectAssets } from "./schema";
 
 const MAX_IMAGE_BYTES = 50 * 1024 * 1024;
 const MAX_IMPORT_FILES = 500;
@@ -17,16 +18,6 @@ const supportedImages: Record<string, string> = {
   "image/jpeg": ".jpg",
   "image/webp": ".webp",
   "image/gif": ".gif",
-};
-
-const knownProjects: Record<string, string> = {
-  "emoji-workflow": "表情包工作流",
-  storyboard: "动画分镜整理",
-  "brand-assets": "品牌素材处理",
-  "video-notes": "视频灵感与脚本",
-  "product-research": "产品调研画布",
-  "weekly-plan": "本周工作规划",
-  new: "未命名画布",
 };
 
 function toSummary(row: {
@@ -49,25 +40,6 @@ function toSummary(row: {
   };
 }
 
-export async function ensureKnownProjects() {
-  const database = await getAssetDatabase();
-  const now = new Date();
-  database.insert(projects).values(
-    Object.entries(knownProjects).map(([id, name]) => ({ id, name, createdAt: now, updatedAt: now })),
-  ).onConflictDoNothing().run();
-}
-
-export async function ensureProject(projectId: string) {
-  await ensureKnownProjects();
-  const database = await getAssetDatabase();
-  database.insert(projects).values({
-    id: projectId,
-    name: knownProjects[projectId] ?? "画布项目",
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  }).onConflictDoNothing().run();
-}
-
 export async function listProjectAssets(projectId: string) {
   await ensureKnownProjects();
   const database = await getAssetDatabase();
@@ -82,21 +54,7 @@ export async function listProjectAssets(projectId: string) {
 }
 
 export async function listAssetProjects(excludeProjectId?: string): Promise<AssetProjectSummary[]> {
-  await ensureKnownProjects();
-  const database = await getAssetDatabase();
-  const where = excludeProjectId ? ne(projects.id, excludeProjectId) : undefined;
-  const rows = database.select({
-    id: projects.id,
-    name: projects.name,
-    assetCount: count(projectAssets.assetId),
-  }).from(projects)
-    .leftJoin(projectAssets, eq(projects.id, projectAssets.projectId))
-    .where(where)
-    .groupBy(projects.id)
-    .orderBy(desc(projects.updatedAt))
-    .all();
-
-  return rows;
+  return (await listProjects(excludeProjectId)).map(({ id, name, assetCount }) => ({ id, name, assetCount }));
 }
 
 export async function referenceAssets(projectId: string, assetIds: string[]) {

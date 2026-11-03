@@ -4,7 +4,7 @@ export type IconName =
   | "arrow-left" | "chevron-down" | "chevron-left" | "chevron-right"
   | "crop" | "download" | "filter" | "folder" | "grid" | "home"
   | "image" | "layers" | "more" | "plus" | "redo" | "save"
-  | "search" | "settings" | "sparkles" | "text" | "undo" | "upload" | "video";
+  | "search" | "settings" | "sparkles" | "text" | "trash" | "undo" | "upload" | "video";
 
 type IconProps = SVGProps<SVGSVGElement> & { name: IconName };
 
@@ -29,6 +29,7 @@ const paths: Record<IconName, ReactNode> = {
   settings: <><circle cx="12" cy="12" r="3" /><path d="M19 15.5a2 2 0 0 0 .4 2.2l.1.1-2.8 2.8-.1-.1a2 2 0 0 0-2.2-.4 2 2 0 0 0-1.2 1.8V22h-4v-.1A2 2 0 0 0 8 20.1a2 2 0 0 0-2.2.4l-.1.1-2.8-2.8.1-.1a2 2 0 0 0 .4-2.2A2 2 0 0 0 1.6 14H1v-4h.6a2 2 0 0 0 1.8-1.2A2 2 0 0 0 3 6.6l-.1-.1 2.8-2.8.1.1A2 2 0 0 0 8 4.2 2 2 0 0 0 9.2 2.4V2h4v.4A2 2 0 0 0 14.4 4a2 2 0 0 0 2.2-.4l.1-.1 2.8 2.8-.1.1a2 2 0 0 0-.4 2.2 2 2 0 0 0 1.8 1.2h.2v4h-.2a2 2 0 0 0-1.8 1.7Z" /></>,
   sparkles: <><path d="m12 3 1.1 3.1L16 7.5l-2.9 1.4L12 12l-1.1-3.1L8 7.5l2.9-1.4Z" /><path d="m18.5 14 .7 2 1.8.8-1.8.9-.7 2-.7-2-1.8-.9 1.8-.8Z" /></>,
   text: <><path d="M5 5h14" /><path d="M12 5v14" /><path d="M8 19h8" /></>,
+  trash: <><path d="M4 7h16" /><path d="M9 7V4h6v3" /><path d="m6 7 1 14h10l1-14" /><path d="M10 11v6M14 11v6" /></>,
   undo: <><path d="m7 3-4 4 4 4" /><path d="M21 17a7 7 0 0 0-7-10H3" /></>,
   upload: <><path d="M12 21V9" /><path d="m7 14 5-5 5 5" /><path d="M5 3h14" /></>,
   video: <><rect x="3" y="6" width="13" height="12" rx="2" /><path d="m16 10 5-3v10l-5-3Z" /></>,

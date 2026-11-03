@@ -7,6 +7,16 @@ export const projects = sqliteTable("projects", {
   updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull(),
 });
 
+export const canvasDocuments = sqliteTable("canvas_documents", {
+  projectId: text("project_id").primaryKey().references(() => projects.id, { onDelete: "cascade" }),
+  schemaVersion: integer("schema_version").notNull().default(1),
+  nodesJson: text("nodes_json").notNull(),
+  edgesJson: text("edges_json").notNull(),
+  viewportJson: text("viewport_json").notNull(),
+  createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
+  updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull(),
+});
+
 export const assets = sqliteTable("assets", {
   id: text("id").primaryKey(),
   type: text("type", { enum: ["image", "video", "text"] }).notNull(),

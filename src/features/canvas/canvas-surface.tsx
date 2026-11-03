@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   addEdge,
   Background,
@@ -11,6 +11,7 @@ import {
   type Edge,
   type IsValidConnection,
   type ReactFlowInstance,
+  type Viewport,
   useEdgesState,
   useNodesState,
 } from "@xyflow/react";
@@ -18,6 +19,7 @@ import { getCanvasModule } from "./module-registry";
 import { ASSET_DRAG_TYPE, type AssetSummary } from "@/features/assets/types";
 import { ModuleNode } from "./nodes/module-node";
 import type { CanvasModuleNode } from "./types";
+import type { CanvasDocumentState } from "@/features/projects/types";
 import styles from "./canvas.module.css";
 
 const nodeTypes = { module: ModuleNode };
@@ -53,15 +55,37 @@ function findPort(node: CanvasModuleNode | undefined, handleId: string | null | 
   return getCanvasModule(node.data.moduleType)[side].find((port) => port.id === handleId);
 }
 
-export function CanvasSurface({ onAssetIdsChange }: { onAssetIdsChange: (assetIds: string[]) => void }) {
-  const [nodes, setNodes, onNodesChange] = useNodesState<CanvasModuleNode>(initialNodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+export function CanvasSurface({ initialDocument, onAssetIdsChange, onDocumentChange }: {
+  initialDocument: CanvasDocumentState | null;
+  onAssetIdsChange: (assetIds: string[]) => void;
+  onDocumentChange: (document: CanvasDocumentState) => void;
+}) {
+  const [nodes, setNodes, onNodesChange] = useNodesState<CanvasModuleNode>(initialDocument?.nodes ?? initialNodes);
+  const [edges, setEdges, onEdgesChange] = useEdgesState(initialDocument?.edges ?? initialEdges);
+  const [viewport, setViewport] = useState<Viewport>(initialDocument?.viewport ?? { x: 0, y: 0, zoom: 1 });
   const flowRef = useRef<ReactFlowInstance<CanvasModuleNode, Edge> | null>(null);
   const assetIdSignature = [...new Set(nodes.flatMap((node) => node.data.assetId ? [node.data.assetId] : []))].sort().join("\n");
 
   useEffect(() => {
     onAssetIdsChange(assetIdSignature ? assetIdSignature.split("\n") : []);
   }, [assetIdSignature, onAssetIdsChange]);
+
+  useEffect(() => {
+    const persistentNodes = nodes.map((node) => {
+      const persistent = { ...node };
+      delete persistent.dragging;
+      delete persistent.measured;
+      delete persistent.resizing;
+      delete persistent.selected;
+      return persistent;
+    });
+    const persistentEdges = edges.map((edge) => {
+      const persistent = { ...edge };
+      delete persistent.selected;
+      return persistent;
+    });
+    onDocumentChange({ schemaVersion: 1, nodes: persistentNodes, edges: persistentEdges, viewport });
+  }, [edges, nodes, onDocumentChange, viewport]);
 
   const isValidConnection: IsValidConnection<Edge> = useCallback((connection) => {
     const sourceNode = nodes.find((node) => node.id === connection.source);
@@ -98,6 +122,7 @@ export function CanvasSurface({ onAssetIdsChange }: { onAssetIdsChange: (assetId
         id: `asset-${asset.id}-${crypto.randomUUID()}`,
         type: "module",
         position,
+        style: { width: 240, height: 190 },
         data: {
           moduleType: "image",
           assetId: asset.id,
@@ -123,10 +148,12 @@ export function CanvasSurface({ onAssetIdsChange }: { onAssetIdsChange: (assetId
         onConnect={onConnect}
         onDragOver={onDragOver}
         onDrop={onDrop}
+        onMoveEnd={(_event, nextViewport) => setViewport(nextViewport)}
         onInit={(instance) => { flowRef.current = instance; }}
         isValidConnection={isValidConnection}
         deleteKeyCode={["Backspace", "Delete"]}
-        fitView
+        defaultViewport={viewport}
+        fitView={!initialDocument}
         fitViewOptions={{ padding: 0.25, maxZoom: 1 }}
         minZoom={0.2}
         maxZoom={2}

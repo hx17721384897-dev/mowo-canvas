@@ -109,7 +109,9 @@
   font-weight: 650;
   box-shadow: 0 10px 24px rgba(83, 89, 225, 0.23);
   transition: 160ms ease;
+  cursor: pointer;
 }
+.primaryButton:disabled, .newCanvasCard:disabled { cursor: wait; opacity: .7; }
 
 .primaryButton:hover { transform: translateY(-1px); box-shadow: 0 13px 28px rgba(83, 89, 225, 0.28); }
 .primaryButton svg { width: 18px; height: 18px; }
@@ -148,6 +150,7 @@
 .projectGrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
 .projectCard,
 .newCanvasCard {
+  width: 100%;
   min-height: 276px;
   overflow: hidden;
   border: 1px solid var(--line);
@@ -176,6 +179,7 @@
   background: var(--accent-soft);
   color: var(--accent);
 }
+.newCanvasCard :global(.newCanvasIcon) { display: grid; width: 48px; height: 48px; place-items: center; border-radius: 15px; background: var(--accent-soft); color: var(--accent); }
 .projectPreview { height: 165px; padding: 16px; border-bottom: 1px solid #eceef4; background: #f4f5fa; }
 .preview_violet { --preview-accent: #7779ee; --preview-soft: #dddfff; }
 .preview_blue { --preview-accent: #5d8ce8; --preview-soft: #dbe9ff; }
@@ -221,9 +225,12 @@
 .topbarSpacer { flex: 1; }
 .saveState { display: flex; align-items: center; gap: 6px; margin: 0 5px; color: #858a99; font-size: 11px; }
 .saveDot { width: 6px; height: 6px; border-radius: 50%; background: #49ad7a; box-shadow: 0 0 0 3px #e8f6ef; }
+.saveDotPending { background: #d49a35; box-shadow: 0 0 0 3px #fff2d8; }
+.saveDotFailed { background: #dc6565; box-shadow: 0 0 0 3px #fde9e9; }
 .topbarAction, .topbarPrimary { display: inline-flex; height: 34px; align-items: center; gap: 7px; padding: 0 12px; border-radius: 9px; background: #fff; color: #4a4f5e; cursor: pointer; font-size: 12px; font-weight: 600; }
 .topbarAction { border: 1px solid var(--line); }
 .topbarPrimary { background: #6268ec; color: #fff; box-shadow: 0 6px 13px rgba(83,89,225,.18); }
+.topbarPrimary:disabled { cursor: wait; opacity: .65; }
 .topbarAction svg, .topbarPrimary svg { width: 15px; height: 15px; }
 
 .editorBody { display: grid; min-width: 0; min-height: 0; grid-template-columns: var(--left-panel-width, 218px) minmax(0, 1fr) var(--right-panel-width, 284px); transition: grid-template-columns 220ms ease; }

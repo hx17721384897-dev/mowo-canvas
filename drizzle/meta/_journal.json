@@ -15,6 +15,13 @@
       "when": 1793630510702,
       "tag": "0001_line-download-tasks",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1793667872108,
+      "tag": "0002_big_proudstar",
+      "breakpoints": true
     }
   ]
 }

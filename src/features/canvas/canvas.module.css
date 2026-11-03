@@ -15,6 +15,66 @@
   box-shadow: 0 0 0 2px rgba(98, 104, 236, 0.13), 0 12px 30px rgba(91, 96, 225, 0.14);
 }
 
+.imageCanvasNode {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-width: 80px;
+  min-height: 80px;
+}
+
+.imageCanvasMedia {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background-color: rgba(255,255,255,.7);
+  background-image: linear-gradient(45deg, rgba(225,227,234,.55) 25%, transparent 25%), linear-gradient(-45deg, rgba(225,227,234,.55) 25%, transparent 25%), linear-gradient(45deg, transparent 75%, rgba(225,227,234,.55) 75%), linear-gradient(-45deg, transparent 75%, rgba(225,227,234,.55) 75%);
+  background-position: 0 0, 0 7px, 7px -7px, -7px 0;
+  background-size: 14px 14px;
+  box-shadow: 0 5px 16px rgba(35,39,57,.08);
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+
+.imageCanvasMedia img { object-fit: contain; }
+.imageCanvasMedia > svg { position: absolute; top: 50%; left: 50%; width: 28px; height: 28px; color: #a5a9b7; transform: translate(-50%, -50%); }
+.imageCanvasNodeSelected .imageCanvasMedia { border-color: #8c78df; box-shadow: 0 0 0 1px rgba(140,120,223,.18), 0 8px 22px rgba(58,47,91,.12); }
+.imageCanvasNode .port { opacity: 0; transition: opacity 120ms ease; }
+.imageCanvasNode:hover .port, .imageCanvasNodeSelected .port { opacity: 1; }
+
+.imageToolbar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 7px;
+  border: 1px solid #e2e3ea;
+  border-radius: 13px;
+  background: rgba(255,255,255,.96);
+  box-shadow: 0 12px 32px rgba(31,35,52,.16);
+  backdrop-filter: blur(10px);
+}
+
+.imageToolbar button, .imageToolbar a {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border-radius: 8px;
+  background: transparent;
+  color: #343844;
+  cursor: pointer;
+}
+
+.imageToolbar button:hover, .imageToolbar a:hover { background: #f1f2f6; }
+.imageToolbar button:disabled { cursor: not-allowed; opacity: .32; }
+.imageToolbar svg { width: 17px; height: 17px; }
+.imageToolbar .deleteImageAction { color: #e24f4f; }
+.toolbarDivider { width: 1px; height: 22px; margin: 0 2px; background: #e5e6ec; }
+.imageResizeLine { border-color: #8c78df !important; }
+.imageResizeHandle { width: 8px !important; height: 8px !important; border: 1px solid #8c78df !important; border-radius: 50% !important; background: #fff !important; }
+
 .nodeHeader {
   display: flex;
   height: 38px;
