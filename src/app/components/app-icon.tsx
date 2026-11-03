@@ -1,26 +1,33 @@
 import type { ReactNode, SVGProps } from "react";
 
 export type IconName =
+  | "audio"
   | "arrow-left" | "chevron-down" | "chevron-left" | "chevron-right"
-  | "crop" | "download" | "filter" | "folder" | "grid" | "home"
-  | "image" | "layers" | "more" | "plus" | "redo" | "save"
+  | "crop" | "cursor" | "download" | "filter" | "folder" | "grid" | "group" | "hand" | "home"
+  | "image" | "info" | "layers" | "layout" | "more" | "plus" | "redo" | "save"
   | "search" | "settings" | "sparkles" | "text" | "trash" | "undo" | "upload" | "video";
 
 type IconProps = SVGProps<SVGSVGElement> & { name: IconName };
 
 const paths: Record<IconName, ReactNode> = {
+  audio: <><path d="M9 18V5l10-2v13" /><circle cx="6" cy="18" r="3" /><circle cx="16" cy="16" r="3" /></>,
   "arrow-left": <path d="m15 18-6-6 6-6" />,
   "chevron-down": <path d="m7 10 5 5 5-5" />,
   "chevron-left": <path d="m15 18-6-6 6-6" />,
   "chevron-right": <path d="m9 18 6-6-6-6" />,
   crop: <><path d="M6 2v14a2 2 0 0 0 2 2h14" /><path d="M18 22V8a2 2 0 0 0-2-2H2" /></>,
+  cursor: <path d="m5 3 14 9-6 1-3 6Z" />,
   download: <><path d="M12 3v12" /><path d="m7 10 5 5 5-5" /><path d="M5 21h14" /></>,
   filter: <path d="M4 5h16l-6 7v5l-4 2v-7Z" />,
   folder: <path d="M3 6.5A1.5 1.5 0 0 1 4.5 5H9l2 2h8.5A1.5 1.5 0 0 1 21 8.5v9A1.5 1.5 0 0 1 19.5 19h-15A1.5 1.5 0 0 1 3 17.5Z" />,
   grid: <><rect x="4" y="4" width="6" height="6" rx="1" /><rect x="14" y="4" width="6" height="6" rx="1" /><rect x="4" y="14" width="6" height="6" rx="1" /><rect x="14" y="14" width="6" height="6" rx="1" /></>,
+  group: <><rect x="4" y="4" width="6" height="6" rx="1" /><rect x="14" y="4" width="6" height="6" rx="1" /><rect x="4" y="14" width="6" height="6" rx="1" /><path d="M14 14h6v6h-6z" strokeDasharray="2 2" /></>,
+  hand: <><path d="M8 11V6a2 2 0 0 1 4 0v4" /><path d="M12 9V5a2 2 0 0 1 4 0v6" /><path d="M16 10V7a2 2 0 0 1 4 0v7c0 5-3 8-8 8H9c-2 0-3.4-.8-4.5-2.4L2 16a2 2 0 0 1 3-2.6l3 2.1" /></>,
   home: <><path d="m3 11 9-8 9 8" /><path d="M5 10v10h14V10" /><path d="M9 20v-6h6v6" /></>,
   image: <><rect x="3" y="4" width="18" height="16" rx="2" /><circle cx="8.5" cy="9" r="1.5" /><path d="m21 15-5-5L5 20" /></>,
+  info: <><circle cx="12" cy="12" r="9" /><path d="M12 11v6" /><path d="M12 7h.01" /></>,
   layers: <><path d="m12 3 9 5-9 5-9-5Z" /><path d="m3 12 9 5 9-5" /><path d="m3 16 9 5 9-5" /></>,
+  layout: <><path d="M4 4h6v16H4z" /><path d="M14 4h6v7h-6z" /><path d="M14 15h6v5h-6z" /></>,
   more: <><circle cx="5" cy="12" r="1" fill="currentColor" stroke="none" /><circle cx="12" cy="12" r="1" fill="currentColor" stroke="none" /><circle cx="19" cy="12" r="1" fill="currentColor" stroke="none" /></>,
   plus: <><path d="M12 5v14" /><path d="M5 12h14" /></>,
   redo: <><path d="m17 3 4 4-4 4" /><path d="M3 17a7 7 0 0 1 7-10h11" /></>,

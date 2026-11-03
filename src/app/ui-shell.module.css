@@ -289,11 +289,13 @@
 .expandRight { right: 13px; }
 .leftCollapsed .expandLeft, .rightCollapsed .expandRight { display: grid; }
 .expandPanelButton svg { width: 15px; height: 15px; }
-.bottomToolbar { position: absolute; z-index: 8; bottom: 18px; left: 50%; display: flex; align-items: center; gap: 4px; padding: 6px; border: 1px solid rgba(221,223,233,.9); border-radius: 13px; background: rgba(255,255,255,.94); box-shadow: 0 12px 30px rgba(36,40,60,.12); transform: translateX(-50%); backdrop-filter: blur(12px); }
-.bottomTool { display: flex; height: 34px; align-items: center; gap: 7px; padding: 0 10px; border-radius: 9px; background: transparent; color: #4c5160; cursor: pointer; font-size: 11px; font-weight: 600; white-space: nowrap; }
+.bottomToolbar { position: absolute; z-index: 8; bottom: 18px; left: 50%; display: flex; align-items: center; gap: 3px; padding: 7px 9px; border: 1px solid rgba(221,223,233,.9); border-radius: 16px; background: rgba(255,255,255,.96); box-shadow: 0 12px 30px rgba(36,40,60,.12); transform: translateX(-50%); backdrop-filter: blur(12px); }
+.bottomTool { display: grid; width: 38px; height: 38px; place-items: center; border-radius: 10px; background: transparent; color: #454951; cursor: pointer; white-space: nowrap; }
 .bottomTool:hover { background: #f0f1f7; }
-.bottomTool svg { width: 15px; height: 15px; }
-.bottomToolAccent { color: #5d63e9; }
+.bottomTool:disabled { cursor: not-allowed; opacity: .3; }
+.bottomTool svg { width: 19px; height: 19px; }
+.bottomToolActive { background: #eee8db; color: #4b4943; }
+.bottomToolbarDivider { width: 1px; height: 25px; margin: 0 5px; background: #dddde2; }
 .modelStatus { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 9px; border: 1px solid #f0dddd; border-radius: 9px; background: #fff9f9; }
 .modelStatusText { display: flex; align-items: center; gap: 7px; font-size: 10px; font-weight: 650; }
 .statusRing { width: 9px; height: 9px; border: 2px solid #f19b9b; border-radius: 50%; }

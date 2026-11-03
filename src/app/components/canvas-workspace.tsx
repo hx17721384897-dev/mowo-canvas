@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent } from "react";
 import Link from "next/link";
-import { CanvasSurface } from "@/features/canvas/canvas-surface";
+import { CanvasSurface, type CanvasInsertType, type CanvasInteractionMode, type CanvasSurfaceHandle } from "@/features/canvas/canvas-surface";
 import { AssetPanel } from "@/features/assets/asset-panel";
 import { ImageDownloadModal } from "@/features/assets/image-download-modal";
 import type { CanvasDocumentState } from "@/features/projects/types";
@@ -53,6 +53,10 @@ export function CanvasWorkspace({ initialDocument, projectId, title }: CanvasWor
   const [rightWidth, setRightWidth] = useState(284);
   const [resizingSide, setResizingSide] = useState<ResizeSide | null>(null);
   const [canvasAssetIds, setCanvasAssetIds] = useState<ReadonlySet<string>>(() => new Set());
+  const [assetRefreshKey, setAssetRefreshKey] = useState(0);
+  const [interactionMode, setInteractionMode] = useState<CanvasInteractionMode>("pan");
+  const [historyState, setHistoryState] = useState({ canRedo: false, canUndo: false });
+  const canvasRef = useRef<CanvasSurfaceHandle>(null);
   const resizeRef = useRef<{
     side: ResizeSide;
     pointerId: number;
@@ -200,8 +204,8 @@ export function CanvasWorkspace({ initialDocument, projectId, title }: CanvasWor
         <span className={styles.projectTitle}>{title}</span>
         <Icon className={styles.projectTitleEdit} name="text" />
         <span className={styles.topbarSpacer} />
-        <button className={styles.iconButton} aria-label="撤销" type="button"><Icon name="undo" /></button>
-        <button className={styles.iconButton} aria-label="重做" type="button"><Icon name="redo" /></button>
+        <button className={styles.iconButton} aria-label="撤销" disabled={!historyState.canUndo} onClick={() => canvasRef.current?.undo()} type="button"><Icon name="undo" /></button>
+        <button className={styles.iconButton} aria-label="重做" disabled={!historyState.canRedo} onClick={() => canvasRef.current?.redo()} type="button"><Icon name="redo" /></button>
         <span className={styles.topbarDivider} />
         <span className={styles.saveState}><span className={`${styles.saveDot} ${saveStatus === "failed" ? styles.saveDotFailed : saveStatus !== "saved" ? styles.saveDotPending : ""}`} />{saveStatus === "saved" ? "已保存" : saveStatus === "saving" ? "保存中…" : saveStatus === "failed" ? "保存失败" : "未保存"}</span>
         <button className={styles.topbarPrimary} disabled={saveStatus === "saving"} onClick={() => void persistDocument()} type="button"><Icon name="save" />保存</button>
@@ -218,7 +222,7 @@ export function CanvasWorkspace({ initialDocument, projectId, title }: CanvasWor
               </div>
               <button aria-label="折叠左侧工具栏" onClick={() => setLeftCollapsed(true)} type="button"><Icon name="chevron-left" /></button>
             </div>
-            {leftView === "assets" ? <AssetPanel canvasAssetIds={canvasAssetIds} projectId={projectId} /> : (
+            {leftView === "assets" ? <AssetPanel canvasAssetIds={canvasAssetIds} projectId={projectId} refreshKey={assetRefreshKey} /> : (
               <div className={styles.toolPanelContent}>
                 <label className={styles.toolSearch}>
                   <Icon name="search" />
@@ -272,13 +276,39 @@ export function CanvasWorkspace({ initialDocument, projectId, title }: CanvasWor
           <button className={`${styles.expandPanelButton} ${styles.expandLeft}`} aria-label="展开左侧工具栏" onClick={() => setLeftCollapsed(false)} type="button"><Icon name="chevron-right" /></button>
           <button className={`${styles.expandPanelButton} ${styles.expandRight}`} aria-label="展开右侧对话栏" onClick={() => setRightCollapsed(false)} type="button"><Icon name="chevron-left" /></button>
           <div className={styles.canvasHint}><span>交互画布</span> · 拖动、缩放与连线</div>
-          <CanvasSurface initialDocument={initialDocument} onAssetIdsChange={handleCanvasAssetIdsChange} onDocumentChange={handleDocumentChange} />
+          <CanvasSurface
+            initialDocument={initialDocument}
+            interactionMode={interactionMode}
+            onAssetIdsChange={handleCanvasAssetIdsChange}
+            onAssetImported={() => setAssetRefreshKey((key) => key + 1)}
+            onDocumentChange={handleDocumentChange}
+            onHistoryChange={setHistoryState}
+            projectId={projectId}
+            ref={canvasRef}
+          />
 
           <nav className={styles.bottomToolbar} aria-label="常用工具">
-            <button className={styles.bottomTool} type="button"><Icon name="plus" /><span>插入</span><Icon name="chevron-down" /></button>
-            <button className={`${styles.bottomTool} ${styles.bottomToolAccent}`} type="button"><Icon name="crop" /><span>裁切</span></button>
-            <button className={styles.bottomTool} type="button"><Icon name="sparkles" /><span>生成</span></button>
-            <button className={styles.bottomTool} type="button"><Icon name="more" /><span>更多</span><Icon name="chevron-down" /></button>
+            <button
+              aria-label={interactionMode === "pan" ? "当前为移动画布，点击切换选择" : "当前为选择节点，点击切换移动"}
+              aria-pressed={interactionMode === "pan"}
+              className={`${styles.bottomTool} ${styles.bottomToolActive}`}
+              onClick={() => setInteractionMode((mode) => mode === "pan" ? "select" : "pan")}
+              title={interactionMode === "pan" ? "移动画布（点击切换为选择）" : "选择节点（点击切换为移动）"}
+              type="button"
+            ><Icon name={interactionMode === "pan" ? "hand" : "cursor"} /></button>
+            <button aria-label="撤销" className={styles.bottomTool} disabled={!historyState.canUndo} onClick={() => canvasRef.current?.undo()} title="撤销" type="button"><Icon name="undo" /></button>
+            <button aria-label="重做" className={styles.bottomTool} disabled={!historyState.canRedo} onClick={() => canvasRef.current?.redo()} title="重做" type="button"><Icon name="redo" /></button>
+            <button aria-label="整理节点（暂未开放）" className={styles.bottomTool} disabled title="整理节点将在后续开放" type="button"><Icon name="layout" /></button>
+            <span className={styles.bottomToolbarDivider} />
+            {([
+              ["text", "text", "插入文本节点"],
+              ["image", "image", "插入图片节点"],
+              ["video", "video", "插入视频节点"],
+              ["audio", "audio", "插入音频节点"],
+              ["group", "group", "插入组"],
+            ] as Array<[CanvasInsertType, IconName, string]>).map(([type, icon, label]) => (
+              <button aria-label={label} className={styles.bottomTool} key={type} onClick={() => canvasRef.current?.addNode(type)} title={label} type="button"><Icon name={icon} /></button>
+            ))}
           </nav>
         </section>
 

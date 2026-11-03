@@ -1,5 +1,7 @@
 .surface { position: absolute; inset: 0; }
 .flow { --xy-edge-stroke-default: #7d88df; --xy-edge-stroke-selected-default: #5962e8; --xy-connectionline-stroke-default: #6268ec; }
+.flow :global(.react-flow__node-group) { padding: 0; border: 0; background: transparent; }
+.flow :global(.react-flow__node-group.selected) { box-shadow: none; }
 
 .nodeCard {
   overflow: visible;
@@ -23,6 +25,11 @@
   min-height: 80px;
 }
 
+.materialNode { position: relative; width: 100%; height: 100%; }
+.materialNodeLabel { position: absolute; top: -23px; left: 2px; color: #656872; font-size: 11px; font-weight: 600; pointer-events: none; }
+.materialNode .port { opacity: 0; transition: opacity 120ms ease; }
+.materialNode:hover .port, .materialNodeSelected .port, .imageCanvasNodeSelected .port { opacity: 1; }
+
 .imageCanvasMedia {
   position: relative;
   width: 100%;
@@ -41,10 +48,8 @@
 .imageCanvasMedia img { object-fit: contain; }
 .imageCanvasMedia > svg { position: absolute; top: 50%; left: 50%; width: 28px; height: 28px; color: #a5a9b7; transform: translate(-50%, -50%); }
 .imageCanvasNodeSelected .imageCanvasMedia { border-color: #8c78df; box-shadow: 0 0 0 1px rgba(140,120,223,.18), 0 8px 22px rgba(58,47,91,.12); }
-.imageCanvasNode .port { opacity: 0; transition: opacity 120ms ease; }
-.imageCanvasNode:hover .port, .imageCanvasNodeSelected .port { opacity: 1; }
-
 .imageToolbar {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 4px;
@@ -72,8 +77,27 @@
 .imageToolbar svg { width: 17px; height: 17px; }
 .imageToolbar .deleteImageAction { color: #e24f4f; }
 .toolbarDivider { width: 1px; height: 22px; margin: 0 2px; background: #e5e6ec; }
+.nodeInfoPopover { position: absolute; top: calc(100% + 8px); left: 0; display: flex; width: max-content; max-width: 240px; flex-direction: column; gap: 3px; padding: 9px 11px; border: 1px solid #e2e3ea; border-radius: 9px; background: #fff; color: #353844; box-shadow: 0 10px 24px rgba(31,35,52,.14); font-size: 10px; text-align: left; }
+.nodeInfoPopover strong { overflow: hidden; max-width: 210px; text-overflow: ellipsis; white-space: nowrap; }
+.nodeInfoPopover small { color: #9296a3; font-size: 9px; }
 .imageResizeLine { border-color: #8c78df !important; }
 .imageResizeHandle { width: 8px !important; height: 8px !important; border: 1px solid #8c78df !important; border-radius: 50% !important; background: #fff !important; }
+
+.emptyMaterialMedia { display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 10px; border-color: #ddd9d0; background: rgba(252,251,248,.94); background-image: none; color: #aaa79f; font-size: 11px; }
+.emptyMaterialIcon { display: grid; width: 48px; height: 48px; place-items: center; border-radius: 16px; background: #eee9dc; color: #b7b3a9; }
+.emptyMaterialIcon svg { width: 24px; height: 24px; }
+
+.textCanvasNode, .emptyMediaNode { border: 1px solid #ddd9d0; border-radius: 20px; background: rgba(252,251,248,.95); color: #716f69; box-shadow: 0 6px 16px rgba(45,43,37,.05); transition: border-color 120ms ease, box-shadow 120ms ease; }
+.materialNodeSelected, .textCanvasNode:hover, .emptyMediaNode:hover { border-color: #9a7029; box-shadow: 0 0 0 1px rgba(154,112,41,.18), 0 10px 22px rgba(60,48,27,.09); }
+.textNodeContent { width: 100%; height: 100%; margin: 0; padding: 20px; color: #89867e; font-size: 16px; line-height: 1.55; white-space: pre-wrap; }
+.textNodeEditor { width: 100%; height: 100%; resize: none; border: 0; outline: 0; padding: 20px; border-radius: inherit; background: transparent; color: #4e4c47; font: inherit; font-size: 16px; line-height: 1.55; }
+.emptyMediaNode { display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 10px; color: #aaa79f; font-size: 11px; }
+
+.groupNode { position: relative; width: 100%; height: 100%; border: 1.5px dashed #c9c3b8; border-radius: 18px; background: rgba(248,246,240,.18); }
+.groupNode > span { position: absolute; top: 10px; left: 14px; color: #858177; font-size: 11px; font-weight: 650; }
+.groupNodeSelected { border-color: #9a7029; background: rgba(248,246,240,.28); }
+.groupResizeLine { border-color: #9a7029 !important; }
+.groupResizeHandle { width: 8px !important; height: 8px !important; border: 1px solid #9a7029 !important; border-radius: 50% !important; background: #fff !important; }
 
 .nodeHeader {
   display: flex;

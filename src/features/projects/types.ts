@@ -1,5 +1,5 @@
 import type { Edge, Viewport } from "@xyflow/react";
-import type { CanvasModuleNode } from "@/features/canvas/types";
+import type { CanvasNode } from "@/features/canvas/types";
 
 export type ProjectSummary = {
   id: string;
@@ -11,7 +11,7 @@ export type ProjectSummary = {
 
 export type CanvasDocumentState = {
   schemaVersion: 1;
-  nodes: CanvasModuleNode[];
+  nodes: CanvasNode[];
   edges: Edge[];
   viewport: Viewport;
 };

@@ -133,7 +133,7 @@ function HistoryAssetDialog({ currentProjectId, onClose, onReferenced }: {
   );
 }
 
-export function AssetPanel({ canvasAssetIds, projectId }: { canvasAssetIds: ReadonlySet<string>; projectId: string }) {
+export function AssetPanel({ canvasAssetIds, projectId, refreshKey = 0 }: { canvasAssetIds: ReadonlySet<string>; projectId: string; refreshKey?: number }) {
   const [assets, setAssets] = useState<AssetSummary[]>([]);
   const [filter, setFilter] = useState<AssetFilter>("all");
   const [scope, setScope] = useState<AssetScope>("project");
@@ -148,7 +148,7 @@ export function AssetPanel({ canvasAssetIds, projectId }: { canvasAssetIds: Read
     fetch(`/api/projects/${encodeURIComponent(projectId)}/assets`, { cache: "no-store" })
       .then((response) => response.json())
       .then((payload: { assets: AssetSummary[] }) => setAssets(payload.assets));
-  }, [projectId]);
+  }, [projectId, refreshKey]);
 
   const scopedAssets = useMemo(() => assets.filter((asset) => {
     if (scope === "on-canvas") return canvasAssetIds.has(asset.id);

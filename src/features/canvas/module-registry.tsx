@@ -14,7 +14,7 @@ export type CanvasModuleDefinition = {
   width: number;
   inputs: CanvasPortDefinition[];
   outputs: CanvasPortDefinition[];
-  Body: ComponentType<CanvasNodeBodyProps>;
+  Body?: ComponentType<CanvasNodeBodyProps>;
 };
 
 export const canvasModuleRegistry: Record<CanvasModuleType, CanvasModuleDefinition> = {
@@ -24,11 +24,40 @@ export const canvasModuleRegistry: Record<CanvasModuleType, CanvasModuleDefiniti
     icon: "image",
     tone: "blue",
     width: 190,
-    inputs: [],
+    inputs: [
+      { id: "image-input", label: "图片", contentType: "image", multiple: false },
+    ],
     outputs: [
       { id: "image", label: "图片", contentType: "image", multiple: true },
     ],
     Body: ImageNodeBody,
+  },
+  text: {
+    type: "text",
+    label: "文本",
+    icon: "text",
+    tone: "blue",
+    width: 300,
+    inputs: [{ id: "text-input", label: "文本", contentType: "text", multiple: false }],
+    outputs: [{ id: "text", label: "文本", contentType: "text", multiple: true }],
+  },
+  video: {
+    type: "video",
+    label: "视频",
+    icon: "video",
+    tone: "blue",
+    width: 280,
+    inputs: [{ id: "video-input", label: "视频", contentType: "video", multiple: false }],
+    outputs: [{ id: "video", label: "视频", contentType: "video", multiple: true }],
+  },
+  audio: {
+    type: "audio",
+    label: "音频",
+    icon: "audio",
+    tone: "blue",
+    width: 280,
+    inputs: [{ id: "audio-input", label: "音频", contentType: "audio", multiple: false }],
+    outputs: [{ id: "audio", label: "音频", contentType: "audio", multiple: true }],
   },
   "batch-crop": {
     type: "batch-crop",
