@@ -35,10 +35,11 @@ function NodeInfo({ data }: { data: CanvasModuleNode["data"] }) {
 function MaterialToolbar({ data, id, selected }: Pick<NodeProps<CanvasModuleNode>, "data" | "id" | "selected">) {
   const [infoOpen, setInfoOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
-  const { addNodes, deleteElements, getNode } = useReactFlow<CanvasNode, Edge>();
-  const { importImage } = useCanvasNodeActions();
+  const { addNodes, deleteElements, getNode, getNodes } = useReactFlow<CanvasNode, Edge>();
+  const { groupSelection, importImage } = useCanvasNodeActions();
   const filledImage = data.moduleType === "image" && Boolean(data.previewUrl);
   const canImport = data.moduleType === "image";
+  const canGroup = getNode(id)?.selected && getNodes().filter((node) => node.selected && !node.parentId && node.type !== "group").length >= 2;
 
   const duplicate = () => {
     const node = getNode(id);
@@ -62,6 +63,7 @@ function MaterialToolbar({ data, id, selected }: Pick<NodeProps<CanvasModuleNode
         {filledImage && data.previewUrl ? <a aria-label="下载图片" className="nodrag nopan" download={data.title ?? "image"} href={data.previewUrl} title="下载图片"><Icon name="download" /></a> : null}
         {filledImage ? <button aria-label="复制图片" className="nodrag nopan" onClick={duplicate} title="复制图片" type="button"><Icon name="layers" /></button> : null}
         <button aria-label="删除节点" className={`${styles.deleteImageAction} nodrag nopan`} onClick={() => void deleteElements({ nodes: [{ id }] })} title="删除节点" type="button"><Icon name="trash" /></button>
+        {canGroup ? <button aria-label="将所选节点成组" className="nodrag nopan" onClick={groupSelection} title="将所选节点成组" type="button"><Icon name="group" /></button> : null}
         {canImport ? <button aria-label={filledImage ? "替换图片" : "导入图片"} className="nodrag nopan" disabled={data.busy} onClick={() => inputRef.current?.click()} title={filledImage ? "替换图片" : "从本地导入图片"} type="button"><Icon name="upload" /></button> : null}
         {filledImage ? <><span className={styles.toolbarDivider} /><button aria-label="裁切图片（尚未接入）" className="nodrag nopan" disabled title="裁切功能将在后续接入" type="button"><Icon name="crop" /></button><button aria-label="其他图片功能（待确认）" className="nodrag nopan" disabled title="其余图片功能等待后续讨论" type="button"><Icon name="more" /></button></> : null}
         {infoOpen ? <NodeInfo data={data} /> : null}
@@ -135,9 +137,15 @@ function EmptyMediaNode({ data, id, selected }: NodeProps<CanvasModuleNode>) {
   );
 }
 
-export function GroupNode({ data, selected }: NodeProps<CanvasGroupNode>) {
+export function GroupNode({ data, id, selected }: NodeProps<CanvasGroupNode>) {
+  const { deleteElements } = useReactFlow<CanvasNode, Edge>();
+  const { ungroupNode } = useCanvasNodeActions();
   return (
     <section className={`${styles.groupNode} ${selected ? styles.groupNodeSelected : ""}`}>
+      <NodeToolbar className={styles.imageToolbar} isVisible={selected} offset={12} position={Position.Top}>
+        <button aria-label="解散组" className="nodrag nopan" onClick={() => ungroupNode(id)} title="解散组并保留内部节点" type="button"><Icon name="group" /></button>
+        <button aria-label="删除组及画布实例" className={`${styles.deleteImageAction} nodrag nopan`} onClick={() => void deleteElements({ nodes: [{ id }] })} title="删除组及内部画布实例" type="button"><Icon name="trash" /></button>
+      </NodeToolbar>
       <NodeResizer handleClassName={styles.groupResizeHandle} isVisible={selected} lineClassName={styles.groupResizeLine} minHeight={180} minWidth={260} />
       <span>{data.label}</span>
     </section>
@@ -160,7 +168,7 @@ export function ModuleNode(props: NodeProps<CanvasModuleNode>) {
         {definition.label}
         <button className="nodrag" aria-label={`${definition.label}更多操作`} type="button"><Icon name="more" /></button>
       </header>
-      {Body ? <Body data={data} /> : null}
+      {Body ? <Body data={data} nodeId={props.id} /> : null}
       <PortHandles kind="source" ports={definition.outputs} />
     </article>
   );

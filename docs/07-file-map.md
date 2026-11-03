@@ -45,6 +45,10 @@ src/
     ├── downloaders/server/               下载任务执行器、网络客户端与 LINE 适配器
     ├── types.ts                          资产类型与浏览器拖拽协议
     └── server/                           SQLite、文件路径与资产目录服务
+└── features/frame-extraction/
+    ├── frame-sequence-viewer.tsx         逐帧播放、组切换与帧定位窗口
+    ├── types.ts                          拆帧任务、草稿组和正式序列契约
+    └── server/                           APNG 合成、GIF 解码、草稿与提交模块
 ```
 
 `drizzle.config.ts` 负责生成迁移；`MOWO_DATA_ROOT` 只控制运行数据位置，不改变迁移文件位置。

@@ -11,7 +11,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "test": "node --no-warnings --experimental-strip-types src/features/assets/downloaders/server/apng.test.ts",
+    "test": "node --no-warnings --experimental-strip-types src/features/assets/downloaders/server/apng.test.ts && node --no-warnings --experimental-strip-types src/features/frame-extraction/server/apng-frame-decoder.test.ts && node scripts/verify-migrations.mjs",
     "lint": "eslint",
     "typecheck": "next typegen && tsc --noEmit",
     "check": "npm run test && npm run lint && npm run typecheck && npm run build",
@@ -25,6 +25,7 @@
     "next": "16.4.3",
     "react": "19.3.0",
     "react-dom": "19.3.0",
+    "sharp": "0.35.5",
     "undici": "7.30.1"
   },
   "devDependencies": {

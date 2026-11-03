@@ -48,7 +48,7 @@
 
 ### AssetCollection
 
-以下 `kind` 字段属于动图拆帧与后续处理模块所需的规划扩展，尚未进入当前数据库迁移。
+`kind` 已由动图拆帧迁移加入当前数据库；序列集合同时关联所属项目。
 
 - `id`
 - `name`
@@ -61,7 +61,7 @@
 
 ### AssetCollectionItem
 
-以下成员身份与时间字段属于规划扩展。当前表仍以“集合 + 资产”作为主键，实现拆帧前必须迁移，否则无法表达同一图片在一个动画中的重复位置。
+成员已迁移为独立 `id`，并以“集合 + 位置”保持唯一，因此同一图片可以在一个动画中重复出现。
 
 - `id`
 - `collectionId`
@@ -74,7 +74,7 @@
 
 ### AssetDerivation
 
-该实体属于下一阶段规划，当前数据库尚未建立对应表。
+该实体及有顺序的输入、输出关系已由动图拆帧迁移建立；当前处理类型为 `frame-extraction`，后续拼接复用同一来源关系模型。
 
 - `id`
 - `projectId`
@@ -165,7 +165,7 @@ type CanvasDocument = {
 - 当前本地单用户版本采用整份文档覆盖；未来支持多窗口或多人并发编辑时增加 `revision` 检测旧数据覆盖。
 - 导入前验证 `schemaVersion` 与数据结构。
 
-当前使用 Drizzle ORM 管理 SQLite。迁移包含 `projects`、`canvas_documents`、`assets`、`project_assets`、`asset_collections`、`asset_collection_items` 和下载任务表；迁移文件受 Git 管理，实际数据库不进入仓库。`canvas_documents` 按项目保存版本、节点、连线和视口 JSON。`deletedAt` 已为回收站预留，但删除与自动清理流程尚未开放。
+当前使用 Drizzle ORM 管理 SQLite。迁移包含项目与画布、资产与集合、派生关系、下载任务和动图拆帧草稿表；迁移文件受 Git 管理，实际数据库不进入仓库。`canvas_documents` 按项目保存版本、节点、连线和视口 JSON。`deletedAt` 已为回收站预留，但删除与自动清理流程尚未开放。
 
 ### DownloadTask 与 DownloadItem
 

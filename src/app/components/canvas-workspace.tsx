@@ -32,6 +32,7 @@ const toolGroups: Array<{
   {
     label: "处理",
     items: [
+      { icon: "layers", label: "动图拆帧", color: "#6c63dc", soft: "#eeebff" },
       { icon: "crop", label: "裁切", color: "#b26b24", soft: "#fff0df", expandable: true },
       { icon: "filter", label: "筛选", color: "#2a9974", soft: "#e3f6ef", expandable: true },
     ],
@@ -244,7 +245,7 @@ export function CanvasWorkspace({ initialDocument, projectId, title }: CanvasWor
                           </div>
                         </div>
                       ) : (
-                        <button className={styles.toolItem} key={item.label} type="button">
+                        <button className={styles.toolItem} key={item.label} onClick={() => item.label === "动图拆帧" && canvasRef.current?.addNode("frame-extraction")} type="button">
                           <span className={styles.toolIcon} style={{ "--tool-color": item.color, "--tool-soft": item.soft } as CSSProperties}><Icon name={item.icon} /></span>
                           <span>{item.label}</span>{item.expandable ? <Icon name="chevron-right" /> : null}
                         </button>

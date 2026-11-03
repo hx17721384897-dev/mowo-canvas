@@ -4,7 +4,7 @@
 
 把一张或多张动图解析为可查看、可复用、保持原始时间顺序的序列帧集合，并让这些集合能够整体拖入画布或继续交给后续拼接模块处理。
 
-当前最新候选为 [动图拆帧 V03 原型](../../design/prototypes/animated-frame-extraction-v03.md)。功能结构已经确认，视觉样式等待用户确认。
+当前实现基线为 [动图拆帧 V03 原型](../../design/prototypes/animated-frame-extraction-v03.md)。功能结构与视觉样式均已确认，第一版已进入实现验证。
 
 ## 已确认需求
 

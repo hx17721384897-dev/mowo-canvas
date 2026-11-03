@@ -1,4 +1,5 @@
 import type { Node } from "@xyflow/react";
+import type { FrameExtractionTask, SavedFrameSequence } from "@/features/frame-extraction/types";
 
 export type CanvasContentType = "audio" | "image" | "image-collection" | "text" | "video";
 
@@ -9,7 +10,7 @@ export type CanvasPortDefinition = {
   multiple: boolean;
 };
 
-export type CanvasModuleType = "audio" | "image" | "batch-crop" | "text" | "video";
+export type CanvasModuleType = "audio" | "image" | "batch-crop" | "frame-extraction" | "frame-result" | "text" | "video";
 
 export type CanvasModuleData = {
   moduleType: CanvasModuleType;
@@ -22,6 +23,8 @@ export type CanvasModuleData = {
   statusMessage?: string;
   busy?: boolean;
   variant?: "warm" | "cool";
+  frameTask?: FrameExtractionTask;
+  savedSequences?: Record<string, SavedFrameSequence>;
 };
 
 export type CanvasModuleNode = Node<CanvasModuleData, "module">;

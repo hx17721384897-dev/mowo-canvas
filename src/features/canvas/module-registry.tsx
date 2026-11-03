@@ -2,9 +2,10 @@ import type { ComponentType } from "react";
 import type { IconName } from "@/app/components/app-icon";
 import { CropNodeBody } from "./nodes/crop-node-body";
 import { ImageNodeBody } from "./nodes/image-node-body";
+import { FrameExtractionNodeBody, FrameResultNodeBody } from "./nodes/frame-extraction-node-body";
 import type { CanvasModuleData, CanvasModuleType, CanvasPortDefinition } from "./types";
 
-export type CanvasNodeBodyProps = { data: CanvasModuleData };
+export type CanvasNodeBodyProps = { data: CanvasModuleData; nodeId: string };
 
 export type CanvasModuleDefinition = {
   type: CanvasModuleType;
@@ -72,6 +73,26 @@ export const canvasModuleRegistry: Record<CanvasModuleType, CanvasModuleDefiniti
       { id: "results", label: "图片集合", contentType: "image-collection", multiple: true },
     ],
     Body: CropNodeBody,
+  },
+  "frame-extraction": {
+    type: "frame-extraction",
+    label: "动图拆帧",
+    icon: "layers",
+    tone: "violet",
+    width: 250,
+    inputs: [{ id: "animated-images", label: "动图", contentType: "image", multiple: true }],
+    outputs: [{ id: "frame-sequences", label: "序列帧集合", contentType: "image-collection", multiple: true }],
+    Body: FrameExtractionNodeBody,
+  },
+  "frame-result": {
+    type: "frame-result",
+    label: "批量结果组",
+    icon: "layers",
+    tone: "violet",
+    width: 660,
+    inputs: [{ id: "source-task", label: "拆帧结果", contentType: "image-collection", multiple: false }],
+    outputs: [{ id: "sequences", label: "序列帧集合", contentType: "image-collection", multiple: true }],
+    Body: FrameResultNodeBody,
   },
 };
 

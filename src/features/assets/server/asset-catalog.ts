@@ -142,7 +142,7 @@ export async function importImageBuffers(projectId: string, sources: ImageBuffer
       sourceUrl: collection.sourceUrl,
       createdAt: new Date(),
     }).run();
-    database.insert(assetCollectionItems).values(importedIds.map((assetId, position) => ({ collectionId, assetId, position })))
+    database.insert(assetCollectionItems).values(importedIds.map((assetId, position) => ({ id: randomUUID(), collectionId, assetId, position })))
       .onConflictDoNothing().run();
   }
 

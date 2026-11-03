@@ -20,6 +20,8 @@ import {
 import { ASSET_DRAG_TYPE, type AssetSummary } from "@/features/assets/types";
 import { Icon } from "@/app/components/app-icon";
 import type { CanvasDocumentState } from "@/features/projects/types";
+import type { FrameExtractionTask, SavedFrameSequence } from "@/features/frame-extraction/types";
+import { FrameSequenceViewer } from "@/features/frame-extraction/frame-sequence-viewer";
 import { getCanvasModule } from "./module-registry";
 import { CanvasNodeActionsProvider } from "./node-actions-context";
 import { GroupNode, ModuleNode } from "./nodes/module-node";
@@ -27,7 +29,7 @@ import type { CanvasModuleData, CanvasModuleNode, CanvasNode } from "./types";
 import styles from "./canvas.module.css";
 
 export type CanvasInteractionMode = "pan" | "select";
-export type CanvasInsertType = "audio" | "group" | "image" | "text" | "video";
+export type CanvasInsertType = "audio" | "frame-extraction" | "group" | "image" | "text" | "video";
 export type CanvasSurfaceHandle = {
   addNode: (type: CanvasInsertType) => void;
   focusAsset: (assetId: string) => void;
@@ -54,8 +56,8 @@ const shortcuts = [
   { keys: "滚轮", action: "缩放画布", status: "可用" },
   { keys: "拖动", action: "框选多个节点（选择模式）", status: "可用" },
   { keys: "Ctrl + C / Ctrl + V", action: "复制、粘贴节点或剪贴板文本 / 图片", status: "规划中" },
-  { keys: "Ctrl + G", action: "将选中节点打组", status: "规划中" },
-  { keys: "Ctrl + Shift + G", action: "解散选中的组", status: "规划中" },
+  { keys: "Ctrl + G", action: "将选中节点打组", status: "可用" },
+  { keys: "Ctrl + Shift + G", action: "解散选中的组", status: "可用" },
   { keys: "Delete / Backspace", action: "删除选中节点（选择模式）", status: "可用" },
 ] as const;
 
@@ -142,6 +144,7 @@ function materialNode(type: Exclude<CanvasInsertType, "group">, position: { x: n
     image: { height: 220, width: 260 },
     text: { height: 200, width: 300 },
     video: { height: 180, width: 280 },
+    "frame-extraction": { height: 150, width: 250 },
   };
   return {
     id: `material-${type}-${crypto.randomUUID()}`,
@@ -170,6 +173,7 @@ export const CanvasSurface = forwardRef<CanvasSurfaceHandle, CanvasSurfaceProps>
   const [liveZoom, setLiveZoom] = useState(viewport.zoom);
   const [miniMapOpen, setMiniMapOpen] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  const [viewer, setViewer] = useState<{ nodeId: string; sourceId: string } | null>(null);
   const surfaceRef = useRef<HTMLDivElement>(null);
   const flowRef = useRef<ReactFlowInstance<CanvasNode, Edge> | null>(null);
   const insertionIndexRef = useRef(0);
@@ -253,6 +257,17 @@ export const CanvasSurface = forwardRef<CanvasSurfaceHandle, CanvasSurfaceProps>
     setNodes((current) => {
       const deselected: CanvasNode[] = current.map((node) => ({ ...node, selected: false }));
       if (type === "group") {
+        const selected = current.filter((node) => node.selected && !node.parentId && node.type !== "group");
+        if (selected.length >= 2) {
+          const left = Math.min(...selected.map((node) => node.position.x));
+          const top = Math.min(...selected.map((node) => node.position.y));
+          const right = Math.max(...selected.map((node) => node.position.x + (node.measured?.width ?? Number(node.style?.width ?? 240))));
+          const bottom = Math.max(...selected.map((node) => node.position.y + (node.measured?.height ?? Number(node.style?.height ?? 180))));
+          const groupId = `group-${crypto.randomUUID()}`;
+          const group: CanvasNode = { id: groupId, type: "group", position: { x: left - 28, y: top - 46 }, selected: true, style: { height: bottom - top + 74, width: right - left + 56 }, data: { label: `组 · ${selected.length} 项` } };
+          const selectedIds = new Set(selected.map((node) => node.id));
+          return parentsFirst([group, ...current.map((node) => selectedIds.has(node.id) ? { ...node, selected: false, parentId: groupId, extent: undefined, position: { x: node.position.x - group.position.x, y: node.position.y - group.position.y } } : { ...node, selected: false })] as CanvasNode[]);
+        }
         return parentsFirst(deselected.concat({
           id: `group-${crypto.randomUUID()}`,
           type: "group",
@@ -266,6 +281,39 @@ export const CanvasSurface = forwardRef<CanvasSurfaceHandle, CanvasSurfaceProps>
       return [...deselected, node];
     });
   }, [commitPendingHistory, setNodes]);
+
+  const dissolveSelectedGroups = useCallback(() => {
+    setNodes((current) => {
+      const groups = current.filter((node) => node.type === "group" && node.selected);
+      if (!groups.length) return current;
+      const positions = new Map(groups.map((group) => [group.id, group.position]));
+      const groupIds = new Set(positions.keys());
+      return current.filter((node) => !groupIds.has(node.id)).map((node) => {
+        if (!node.parentId || !groupIds.has(node.parentId)) return node;
+        const parent = positions.get(node.parentId)!;
+        return { ...node, parentId: undefined, extent: undefined, position: { x: parent.x + node.position.x, y: parent.y + node.position.y }, selected: true };
+      });
+    });
+  }, [setNodes]);
+
+  const ungroupNode = useCallback((groupId: string) => {
+    setNodes((current) => {
+      const group = current.find((node) => node.id === groupId && node.type === "group");
+      if (!group) return current;
+      return current.filter((node) => node.id !== groupId).map((node) => node.parentId === groupId ? { ...node, parentId: undefined, extent: undefined, position: { x: group.position.x + node.position.x, y: group.position.y + node.position.y }, selected: true } : node);
+    });
+  }, [setNodes]);
+
+  useEffect(() => {
+    const handleGrouping = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (target?.matches("input, textarea, [contenteditable='true']") || !event.ctrlKey || event.key.toLowerCase() !== "g") return;
+      event.preventDefault();
+      if (event.shiftKey) dissolveSelectedGroups(); else addNode("group");
+    };
+    window.addEventListener("keydown", handleGrouping);
+    return () => window.removeEventListener("keydown", handleGrouping);
+  }, [addNode, dissolveSelectedGroups]);
 
   const focusAsset = useCallback((assetId: string) => {
     const instance = flowRef.current;
@@ -297,6 +345,66 @@ export const CanvasSurface = forwardRef<CanvasSurfaceHandle, CanvasSurfaceProps>
     setNodes((current) => current.map((node) => node.id === nodeId && isModuleNode(node) ? { ...node, data: { ...node.data, ...data } } : node));
   }, [setNodes]);
 
+  const startFrameExtraction = useCallback(async (nodeId: string) => {
+    const processor = nodes.find((node) => node.id === nodeId && isModuleNode(node));
+    if (!processor || processor.type !== "module") return;
+    const assetIds = edges.filter((edge) => edge.target === nodeId && edge.targetHandle === "animated-images")
+      .map((edge) => nodes.find((node) => node.id === edge.source))
+      .filter(isModuleNode).flatMap((node) => node.data.assetId ? [node.data.assetId] : []);
+    if (!assetIds.length) { updateNodeData(nodeId, { statusMessage: "请先连接至少一张 APNG 或 GIF 动图" }); return; }
+    updateNodeData(nodeId, { busy: true, statusMessage: `正在拆解 ${assetIds.length} 张动图…` });
+    try {
+      const response = await fetch("/api/frame-extraction/tasks", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ projectId, assetIds, taskId: processor.data.frameTask?.id }) });
+      const payload = await response.json() as { task?: FrameExtractionTask; error?: string };
+      if (!response.ok || !payload.task) throw new Error(payload.error ?? "拆帧失败");
+      const task = payload.task;
+      const resultEdge = edges.find((edge) => edge.source === nodeId && edge.sourceHandle === "frame-sequences");
+      const existingResult = resultEdge ? nodes.find((node) => node.id === resultEdge.target) : undefined;
+      const existingResultId = isModuleNode(existingResult) && existingResult.data.moduleType === "frame-result" ? existingResult.id : undefined;
+      const resultId = existingResultId ?? `frame-result-${crypto.randomUUID()}`;
+      setNodes((current) => {
+        const updated = current.map((node) => {
+          if (node.id === nodeId && isModuleNode(node)) return { ...node, data: { ...node.data, busy: false, statusMessage: task.status === "partial" ? "部分素材拆解失败" : "拆帧完成", frameTask: task } };
+          if (node.id === existingResultId && isModuleNode(node)) return { ...node, data: { ...node.data, frameTask: task } };
+          return node;
+        });
+        const resultNode: CanvasModuleNode = { id: resultId, type: "module", position: { x: processor.position.x + 360, y: processor.position.y - 110 }, data: { moduleType: "frame-result", frameTask: task } };
+        return existingResultId ? updated : updated.concat(resultNode);
+      });
+      if (!existingResultId) setEdges((currentEdges) => addEdge({ id: `frame-result-edge-${crypto.randomUUID()}`, source: nodeId, sourceHandle: "frame-sequences", target: resultId, targetHandle: "source-task", type: "smoothstep" }, currentEdges));
+    } catch (error) {
+      updateNodeData(nodeId, { busy: false, statusMessage: error instanceof Error ? error.message : "拆帧失败" });
+    }
+  }, [edges, nodes, projectId, setEdges, setNodes, updateNodeData]);
+
+  const updateFrameDraft = useCallback((nodeId: string, task: FrameExtractionTask) => updateNodeData(nodeId, { frameTask: task }), [updateNodeData]);
+  const openFrameViewer = useCallback((nodeId: string, sourceId: string) => setViewer({ nodeId, sourceId }), []);
+
+  const materializeFrameSequence = useCallback(async (nodeId: string, sourceId: string) => {
+    const result = nodes.find((node) => node.id === nodeId);
+    if (!isModuleNode(result) || !result.data.frameTask) return;
+    let sequence = result.data.savedSequences?.[sourceId];
+    if (!sequence) {
+      const response = await fetch(`/api/frame-extraction/tasks/${result.data.frameTask.id}/sources/${sourceId}/save`, { method: "POST" });
+      const payload = await response.json() as { sequence?: SavedFrameSequence; error?: string };
+      if (!response.ok || !payload.sequence) { updateNodeData(nodeId, { statusMessage: payload.error ?? "保存序列失败" }); return; }
+      sequence = payload.sequence;
+      updateNodeData(nodeId, { savedSequences: { ...result.data.savedSequences, [sourceId]: sequence }, statusMessage: "序列已保存" });
+    }
+    const instance = flowRef.current;
+    if (!instance) return;
+    const columns = Math.max(1, Math.min(6, Math.ceil(Math.sqrt(sequence.assets.length))));
+    const groupId = `sequence-group-${crypto.randomUUID()}`;
+    const base = { x: result.position.x + 30, y: result.position.y + 560 };
+    const width = columns * 150 + 30;
+    const rows = Math.ceil(sequence.assets.length / columns);
+    const group: CanvasNode = { id: groupId, type: "group", position: base, style: { width, height: rows * 150 + 60 }, data: { label: `${sequence.name} · ${sequence.assets.length} 帧` } };
+    const children: CanvasModuleNode[] = sequence.assets.map((asset, index) => ({ id: `frame-asset-${asset.id}-${crypto.randomUUID()}`, type: "module", parentId: groupId, extent: "parent", position: { x: 18 + (index % columns) * 150, y: 38 + Math.floor(index / columns) * 150 }, style: { width: 132, height: 132 }, data: { moduleType: "image", assetId: asset.id, previewUrl: asset.previewUrl, title: `${String(index + 1).padStart(3, "0")} · ${asset.name}`, naturalSizeApplied: true } }));
+    setNodes((current) => parentsFirst(current.concat(group, ...children)));
+    onAssetImported();
+    window.setTimeout(() => void instance.fitView({ nodes: [group], duration: 450, padding: .35, maxZoom: 1 }), 50);
+  }, [nodes, onAssetImported, setNodes, updateNodeData]);
+
   const importImage = useCallback(async (nodeId: string, file: File) => {
     updateNodeData(nodeId, { busy: true, statusMessage: undefined });
     try {
@@ -323,7 +431,7 @@ export const CanvasSurface = forwardRef<CanvasSurfaceHandle, CanvasSurfaceProps>
     }
   }, [onAssetImported, projectId, updateNodeData]);
 
-  const nodeActions = useMemo(() => ({ importImage, updateNodeData }), [importImage, updateNodeData]);
+  const nodeActions = useMemo(() => ({ groupSelection: () => addNode("group"), importImage, materializeFrameSequence, openFrameViewer, startFrameExtraction, ungroupNode, updateFrameDraft, updateNodeData }), [addNode, importImage, materializeFrameSequence, openFrameViewer, startFrameExtraction, ungroupNode, updateFrameDraft, updateNodeData]);
 
   const onDragOver = useCallback((event: React.DragEvent) => {
     if (!event.dataTransfer.types.includes(ASSET_DRAG_TYPE)) return;
@@ -346,7 +454,7 @@ export const CanvasSurface = forwardRef<CanvasSurfaceHandle, CanvasSurfaceProps>
           type: "module",
           position: group ? { x: position.x - group.position.x, y: position.y - group.position.y } : position,
           parentId: group?.id,
-          extent: group ? "parent" : undefined,
+          extent: undefined,
           style: { height: 190, width: 240 },
           data: {
             moduleType: "image",
@@ -364,17 +472,38 @@ export const CanvasSurface = forwardRef<CanvasSurfaceHandle, CanvasSurfaceProps>
   }, [setNodes]);
 
   const onNodeDragStop: OnNodeDrag<CanvasNode> = useCallback((_event, node) => {
-    if (node.type === "group" || node.parentId || !flowRef.current) return;
-    const group = flowRef.current.getIntersectingNodes(node).find((candidate) => candidate.type === "group");
+    if (node.type === "group" || !flowRef.current) return;
+    const width = node.measured?.width ?? Number(node.style?.width ?? 0);
+    const height = node.measured?.height ?? Number(node.style?.height ?? 0);
+    if (node.parentId) {
+      const parent = flowRef.current.getNode(node.parentId);
+      if (!parent) return;
+      const parentWidth = parent.measured?.width ?? Number(parent.style?.width ?? 0);
+      const parentHeight = parent.measured?.height ?? Number(parent.style?.height ?? 0);
+      const center = { x: node.position.x + width / 2, y: node.position.y + height / 2 };
+      if (center.x < -24 || center.y < -24 || center.x > parentWidth + 24 || center.y > parentHeight + 24) {
+        setNodes((current) => parentsFirst(current.map((item) => item.id === node.id ? { ...item, parentId: undefined, extent: undefined, position: { x: parent.position.x + node.position.x, y: parent.position.y + node.position.y } } : item)));
+      }
+      return;
+    }
+    const center = { x: node.position.x + width / 2, y: node.position.y + height / 2 };
+    const group = flowRef.current.getNodes().find((candidate) => {
+      if (candidate.type !== "group") return false;
+      const groupWidth = candidate.measured?.width ?? Number(candidate.style?.width ?? 0);
+      const groupHeight = candidate.measured?.height ?? Number(candidate.style?.height ?? 0);
+      return center.x >= candidate.position.x + 12 && center.x <= candidate.position.x + groupWidth - 12 && center.y >= candidate.position.y + 12 && center.y <= candidate.position.y + groupHeight - 12;
+    });
     if (!group) return;
-    const nodePosition = node.position;
-    const groupPosition = group.position;
-    setNodes((current) => parentsFirst(current.map((item) => item.id === node.id ? {
-      ...item,
-      parentId: group.id,
-      extent: "parent" as const,
-      position: { x: Math.max(8, nodePosition.x - groupPosition.x), y: Math.max(28, nodePosition.y - groupPosition.y) },
-    } : item)));
+    const relativePosition = { x: node.position.x - group.position.x, y: node.position.y - group.position.y };
+    setNodes((current) => parentsFirst(current.map((item) => {
+      if (item.id === node.id) return { ...item, parentId: group.id, extent: undefined, position: relativePosition };
+      if (item.id === group.id) {
+        const currentWidth = item.measured?.width ?? Number(item.style?.width ?? 0);
+        const currentHeight = item.measured?.height ?? Number(item.style?.height ?? 0);
+        return { ...item, style: { ...item.style, width: Math.max(currentWidth, relativePosition.x + width + 20), height: Math.max(currentHeight, relativePosition.y + height + 20) } };
+      }
+      return item;
+    })));
   }, [setNodes]);
 
   const handleNodeChanges = useCallback((changes: NodeChange<CanvasNode>[]) => {
@@ -466,6 +595,10 @@ export const CanvasSurface = forwardRef<CanvasSurfaceHandle, CanvasSurfaceProps>
           </section>
         </div>
       ) : null}
+      {viewer ? (() => {
+        const node = nodes.find((candidate) => candidate.id === viewer.nodeId);
+        return isModuleNode(node) && node.data.frameTask ? <FrameSequenceViewer initialSourceId={viewer.sourceId} onClose={() => setViewer(null)} onPlace={(sourceId) => { void materializeFrameSequence(viewer.nodeId, sourceId); setViewer(null); }} task={node.data.frameTask} /> : null;
+      })() : null}
     </div>
   );
 });
