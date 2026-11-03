@@ -9,7 +9,7 @@ export async function GET(_request: Request, context: RouteContext<"/api/downloa
     if (!item) return new Response("Not found", { status: 404 });
     const content = await readFile(item.path);
     const responseContent = item.animated ? makeApngLoopForever(content) : content;
-    return new Response(responseContent, {
+    return new Response(new Uint8Array(responseContent), {
       headers: {
         "Cache-Control": "private, max-age=60",
         "Content-Disposition": `inline; filename*=UTF-8''${encodeURIComponent(item.name)}`,
