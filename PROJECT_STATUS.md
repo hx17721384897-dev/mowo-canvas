@@ -8,6 +8,8 @@
 
 ## 当前目标
 
+Agent 已验证 DeepSeek 基本调用与隔离流式执行，V1 对话后端基础和离线 HTTP 检查已完成；下一步接入右侧对话 UI，再完成设置和整体验收。当前侧栏尚未启用。详见 [V1 实施进度](docs/ai/v1-progress.md) 与 [Agent 实施计划](docs/ai/agent-implementation-plan.md)。
+
 验证并完善首个真实处理链“动图拆帧 → 批量结果组 → 正式序列资产”。
 
 ## 已确认

@@ -11,6 +11,8 @@
 
 当前执行分工与准备状态见 [阶段 0 清单](stage-0-checklist.md)。
 
+正式对话后端的交付范围、验证证据与剩余工作见 [V1 实施进度](v1-progress.md)，接口以 [AI 运行接口](../api/ai-runs.md) 为准。
+
 当前计划书已获用户确认，是本目录唯一实施依据，详细步骤、设计与验收见 [MOWO Agent 实施计划](agent-implementation-plan.md)。供应商、依赖和密钥方案在阶段 0 验证。
 
 1. 模型设置、服务端 DeepSeek 调用、流式对话、停止与历史记录。
