@@ -183,6 +183,44 @@ try {
   }
   const overflow = await evaluate(`(()=>{const panel=document.querySelector('textarea[aria-label="输入消息"]').closest('aside');return panel.scrollWidth>panel.clientWidth+1})()`);
   assert.equal(overflow, false, "Sidebar fits its available width");
+  if (!live) {
+    const runCount = store.db.prepare("SELECT count(*) AS n FROM ai_runs").get().n;
+    const messageCount = store.db.prepare("SELECT count(*) AS n FROM ai_messages").get().n;
+    await evaluate(`document.querySelector('[aria-label="会话设置菜单"]').click()`);
+    await evaluate(`document.querySelector('button[aria-label="提问卡片样式预览"]').click()`);
+    await waitFor(`!!document.querySelector('section[aria-label="提问卡片样式预览"]')`);
+    assert.equal(await evaluate(`[...document.querySelectorAll('section[aria-label="提问卡片样式预览"] button')].find(b=>b.textContent==='下一个').disabled`), true);
+    await evaluate(`document.querySelector('input[name$="-format"]').click();document.querySelector('input[name$="-order"]').click()`);
+    await evaluate(`[...document.querySelectorAll('section[aria-label="提问卡片样式预览"] button')].find(b=>b.textContent==='下一个').click()`);
+    await waitFor(`document.querySelector('[aria-label="问题分页"]').textContent.includes('2 / 3')`);
+    await evaluate(`[...document.querySelectorAll('input[name$="-layout"]')].at(-1).click()`);
+    await evaluate(`(()=>{const i=document.querySelector('section[aria-label="提问卡片样式预览"] textarea');Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(i,'6 列 × 2 行');i.dispatchEvent(new Event('input',{bubbles:true}));})()`);
+    await evaluate(`[...document.querySelectorAll('section[aria-label="提问卡片样式预览"] button')].find(b=>b.textContent==='下一个').click()`);
+    await waitFor(`document.querySelector('[aria-label="问题分页"]').textContent.includes('3 / 3')`);
+    await evaluate(`document.querySelector('[aria-label="上一页问题"]').click()`);
+    await waitFor(`document.querySelector('section[aria-label="提问卡片样式预览"] textarea')?.value==='6 列 × 2 行'`);
+    await evaluate(`document.querySelector('[aria-label="上一页问题"]').click()`);
+    assert.equal(await evaluate(`document.querySelector('input[name$="-format"]').checked && document.querySelector('input[name$="-order"]').checked`), true);
+    await evaluate(`document.querySelector('[aria-label="下一页问题"]').click()`);
+    await evaluate(`document.querySelector('[aria-label="下一页问题"]').click()`);
+    await evaluate(`(()=>{const inputs=[...document.querySelectorAll('input[type="checkbox"]')];inputs[0].click();inputs[1].click();inputs[3].click()})()`);
+    await evaluate(`(()=>{const i=document.querySelector('section[aria-label="提问卡片样式预览"] textarea');Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(i,'保持帧率一致');i.dispatchEvent(new Event('input',{bubbles:true}));})()`);
+    await evaluate(`[...document.querySelectorAll('section[aria-label="提问卡片样式预览"] button')].find(b=>b.textContent==='完成预览').click()`);
+    await waitFor(`document.querySelector('[aria-label="提问预览结果"]')?.textContent.includes('保持帧率一致')`);
+    assert.equal(await evaluate(`document.querySelector('[aria-label="提问预览结果"]').textContent.includes('6 列 × 2 行')`), true);
+    await evaluate(`[...document.querySelectorAll('[aria-label="提问预览结果"] button')].find(b=>b.textContent==='重新预览').click()`);
+    assert.equal(await evaluate(`document.querySelector('input[name$="-format"]').checked`), false);
+    for (let i = 0; i < 3; i++) await evaluate(`[...document.querySelectorAll('section[aria-label="提问卡片样式预览"] button')].find(b=>b.textContent==='跳过').click()`);
+    await waitFor(`document.querySelector('[aria-label="提问预览结果"]')?.textContent.includes('已跳过')`);
+    await evaluate(`[...document.querySelectorAll('[aria-label="提问预览结果"] button')].find(b=>b.textContent==='关闭预览').click()`);
+    assert.equal(store.db.prepare("SELECT count(*) AS n FROM ai_runs").get().n, runCount);
+    assert.equal(store.db.prepare("SELECT count(*) AS n FROM ai_messages").get().n, messageCount);
+    await evaluate(`document.querySelector('[aria-label="会话设置菜单"]').click()`);
+    await evaluate(`document.querySelector('button[aria-label="提问卡片样式预览"]').click()`);
+    await evaluate(`document.querySelector('input[name$="-format"]').click();document.querySelector('input[name$="-order"]').click()`);
+    const fits = await evaluate(`(()=>{const card=document.querySelector('section[aria-label="提问卡片样式预览"]');const c=card.getBoundingClientRect();const f=card.querySelector('footer').getBoundingClientRect();const composer=document.querySelector('textarea[aria-label="输入消息"]').closest('form').getBoundingClientRect();return card.scrollWidth<=card.clientWidth+1 && f.bottom<=composer.top && c.height<innerHeight*0.6})()`);
+    assert.equal(fits, true, "Question preview fits the narrow sidebar and keeps footer/composer separate");
+  }
   assert.deepEqual(browserErrors, [], "No uncaught browser exceptions");
   const screenshot = process.env.MOWO_TEST_SCREENSHOT ?? join(tmpdir(), "mowo-ai-chat-v1.png");
   writeFileSync(screenshot, Buffer.from((await cdp("Page.captureScreenshot", { format: "png" })).data, "base64"));

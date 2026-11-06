@@ -6,6 +6,7 @@ import { Icon } from "@/app/components/app-icon";
 import { createBrowserSession, runErrorText, type ChatSession, type ChatState } from "./client/chat-session";
 import { isTerminal, type ConversationSummary, type StoredChatMessage } from "./types";
 import { ChatIcon } from "./chat-icons";
+import { ClarificationPreview } from "./clarification-preview";
 import styles from "./chat.module.css";
 
 const SessionContext = createContext<{ state: ChatState; session: ChatSession } | null>(null);
@@ -147,6 +148,7 @@ function ConversationPanel({ projectId, onCollapse, expanded, onExpand, conversa
   const state = useSyncExternalStore(session.subscribe, session.getSnapshot, session.getServerSnapshot);
   const [draft, setDraft] = useState("");
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [questionPreviewOpen, setQuestionPreviewOpen] = useState(false);
   const [menu, setMenu] = useState<"history" | "settings" | null>(null);
   const [editingTitle, setEditingTitle] = useState(false);
   const [editingHistory, setEditingHistory] = useState<string | null>(null);
@@ -205,6 +207,7 @@ function ConversationPanel({ projectId, onCollapse, expanded, onExpand, conversa
         </div>}
         {menu === "settings" && <div className={styles.settingsMenu}>
           <button type="button" aria-label="语言模型设置" onClick={() => { setMenu(null); setSettingsOpen(true); }}><ChatIcon name="settings" /><span>语言模型设置</span></button>
+          <button type="button" aria-label="提问卡片样式预览" onClick={() => { setMenu(null); setQuestionPreviewOpen(true); }}><Icon name="help" /><span>提问卡片样式预览</span></button>
           <div className={styles.menuModel}><span className={state.configuration?.configured ? styles.ready : styles.unconfigured} />DeepSeek Flash · {state.configuration?.configured ? "已配置" : "未配置"}</div>
           <details className={styles.contextNote}><summary>对话范围与上下文</summary><p>当前只发送文字，画布素材不会自动外发。只使用当前会话最近完整成功的问答，最多 40 轮、累计 16000 字符；中断回复不会自动发送。</p></details>
         </div>}
@@ -217,6 +220,7 @@ function ConversationPanel({ projectId, onCollapse, expanded, onExpand, conversa
       {state.pending && <div className={styles.notice}><strong>待核对的发送</strong><p className={styles.pendingText}>{state.pending.message}</p><button type="button" disabled={state.submitting || state.loading} onClick={() => { void session.resolvePending(true); }}>{state.submitting ? "核对中…" : "核对并重试"}</button></div>}
       {state.error && <div className={styles.notice} role="alert">{state.error}<button type="button" disabled={state.loading || state.submitting} onClick={() => { void session.refresh(); }}>恢复记录</button></div>}
       {running && <div className={styles.runStatus} role="status">{state.connection === "reconnecting" ? "连接中断，正在核对后台状态…" : state.stopping ? "正在确认停止…" : "正在生成回复…"}</div>}
+      {questionPreviewOpen && <ClarificationPreview onClose={() => setQuestionPreviewOpen(false)} />}
       <form className={styles.composer} onSubmit={(event) => { void submit(event); }}>
         <textarea aria-label="输入消息" placeholder={state.configuration?.configured ? "输入消息，Enter 发送" : "请先配置语言模型"} rows={3} maxLength={8000} value={draft} onChange={(event) => setDraft(event.target.value)} onKeyDown={(event) => {
           if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing && event.keyCode !== 229) { event.preventDefault(); void submit(); }

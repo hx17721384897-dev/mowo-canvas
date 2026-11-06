@@ -10,6 +10,8 @@
 
 ## 当前最新原型
 
+- [提问卡片 V01](prototypes/clarification-card-v01-preview.md)：**当前最新候选**，只实现样式和本地交互预览，尚未接入助手追问。
+
 - [动图拆帧 V03 原型](prototypes/animated-frame-extraction-v03.md)：**当前最新且已确认的实现基线**。V01、V02 已被替代，只通过 Git 历史追溯。
 
 ## 原型规则
