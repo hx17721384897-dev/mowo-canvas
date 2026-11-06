@@ -5,6 +5,7 @@ import Link from "next/link";
 import { CanvasSurface, type CanvasInsertType, type CanvasInteractionMode, type CanvasSurfaceHandle } from "@/features/canvas/canvas-surface";
 import { AssetPanel } from "@/features/assets/asset-panel";
 import { ImageDownloadModal } from "@/features/assets/image-download-modal";
+import { ChatPanel } from "@/features/ai/chat-panel";
 import type { CanvasDocumentState } from "@/features/projects/types";
 import { Icon, type IconName } from "./app-icon";
 import styles from "../ui-shell.module.css";
@@ -313,7 +314,7 @@ export function CanvasWorkspace({ initialDocument, projectId, title }: CanvasWor
           </nav>
         </section>
 
-        <aside className={styles.chatPanel} aria-hidden={rightCollapsed}>
+        <aside className={styles.chatPanel} aria-hidden={rightCollapsed} inert={rightCollapsed}>
           <button
             aria-label="调整右侧面板宽度"
             aria-orientation="vertical"
@@ -329,28 +330,7 @@ export function CanvasWorkspace({ initialDocument, projectId, title }: CanvasWor
             role="separator"
             type="button"
           />
-          <div className={styles.panelInner}>
-            <div className={styles.panelHeader}>
-              <h2>AI 助手</h2>
-              <div>
-                <button aria-label="模型设置" type="button"><Icon name="settings" /></button>
-                <button aria-label="折叠右侧对话栏" onClick={() => setRightCollapsed(true)} type="button"><Icon name="chevron-right" /></button>
-              </div>
-            </div>
-            <div className={styles.modelStatus}>
-              <span className={styles.modelStatusText}><span className={styles.statusRing} />模型未配置</span>
-              <button type="button">设置模型</button>
-            </div>
-            <div className={styles.chatEmpty}>
-              <span className={styles.assistantOrb}><Icon name="sparkles" /></span>
-              <strong>和 AI 一起搭建工作流</strong>
-              <p>配置模型后，可在这里分析画布、提出节点建议或生成图片。</p>
-            </div>
-            <label className={styles.chatComposer}>
-              <textarea aria-label="输入消息" disabled placeholder="输入消息" rows={2} />
-              <button className={styles.sendButton} disabled aria-label="发送消息" type="button"><Icon name="upload" /></button>
-            </label>
-          </div>
+          <ChatPanel key={projectId} projectId={projectId} onCollapse={() => setRightCollapsed(true)} />
         </aside>
       </div>
       {downloadOpen ? <ImageDownloadModal projectId={projectId} onClose={() => setDownloadOpen(false)} onImported={() => { setDownloadOpen(false); setLeftView("assets"); }} /> : null}

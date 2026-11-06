@@ -1,6 +1,6 @@
 import Database from "better-sqlite3";
 import { createHash, randomUUID } from "node:crypto";
-import type { AiRun, ChatMessage, RunStatus } from "../types.ts";
+import type { AiRun, ChatMessage, ConversationSnapshot, RunStatus, StoredChatMessage } from "../types.ts";
 
 type Row = {
   id: string; project_id: string; client_request_id: string; input_hash: string;
@@ -50,9 +50,16 @@ export class RunStore {
   }
   history(projectId: string) {
     this.projectExists(projectId);
-    return this.db.prepare(`SELECT m.id, m.run_id AS runId, m.role, m.content, m.status, m.created_at AS createdAt
+    return this.db.prepare(`SELECT m.id, m.run_id AS runId, m.role, m.content, m.status, r.error_code AS errorCode, m.created_at AS createdAt
       FROM ai_messages m JOIN ai_runs r ON m.run_id = r.id WHERE r.project_id = ?
-      ORDER BY r.created_at, r.rowid, CASE m.role WHEN 'user' THEN 0 ELSE 1 END`).all(projectId);
+      ORDER BY r.created_at, r.rowid, CASE m.role WHEN 'user' THEN 0 ELSE 1 END`).all(projectId) as StoredChatMessage[];
+  }
+  conversation(projectId: string): ConversationSnapshot {
+    return this.db.transaction(() => {
+      const messages = this.history(projectId);
+      const row = this.db.prepare("SELECT * FROM ai_runs WHERE project_id=? AND status IN ('queued','running')").get(projectId) as Row | undefined;
+      return { messages, activeRun: row ? this.view(row) : null };
+    }).deferred();
   }
   create(projectId: string, requestId: string, message: string) {
     if (!/^[A-Za-z0-9_-]{8,100}$/.test(requestId) || !message.trim() || message.length > MAX_INPUT_CHARS) throw new RunError("INVALID_INPUT");

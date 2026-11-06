@@ -27,7 +27,7 @@ export async function GET(request: Request, context: Context) {
     checkLocalRequest(request);
     const { id } = await context.params;
     const requestId = new URL(request.url).searchParams.get("clientRequestId");
-    const result = await withRuns((store) => requestId ? { run: store.find(id, requestId) } : { messages: store.history(id) });
+    const result = await withRuns((store) => requestId ? { run: store.find(id, requestId) } : store.conversation(id));
     await dispatchPending();
     return Response.json(result, { headers: { "Cache-Control": "no-store" } });
   } catch (error) { return aiError(error); }

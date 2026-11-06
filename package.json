@@ -11,10 +11,11 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "test:ai": "node --no-warnings --experimental-strip-types --test src/features/ai/server/run-store.test.ts src/features/ai/server/request-policy.test.ts src/features/ai/client/chat-session.test.ts",
     "test": "node --no-warnings --experimental-strip-types src/features/assets/downloaders/server/apng.test.ts && node --no-warnings --experimental-strip-types src/features/frame-extraction/server/apng-frame-decoder.test.ts && node scripts/verify-migrations.mjs",
     "lint": "eslint",
     "typecheck": "next typegen && tsc --noEmit",
-    "check": "npm run test && npm run lint && npm run typecheck && npm run build",
+    "check": "npm run test && npm run test:ai && npm run lint && npm run typecheck && npm run build",
     "db:generate": "drizzle-kit generate"
   },
   "dependencies": {

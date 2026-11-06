@@ -26,7 +26,7 @@ MOWO Canvas/
 
 ## 当前代码结构
 
-AI 对话：`src/features/ai/` 保存类型、运行/消息/事件表、事务存储与服务端调度；`src/app/api/ai/runs/` 与 `src/app/api/projects/[id]/ai/runs/` 提供接口。`scripts/ai-run-worker.ts` 为正式独立工作进程；`ai-run-test-worker.ts` 仅用于离线测试；`verify-ai-runs-http.mjs` 验证真实 HTTP 链路。接口契约见 `docs/api/ai-runs.md`，交付证据见 `docs/ai/v1-progress.md`。
+AI 对话：`src/features/ai/` 保存类型、右侧聊天组件与样式、客户端恢复状态、运行/消息/事件表、事务存储及调度；`src/app/api/ai/` 与 `src/app/api/projects/[id]/ai/runs/` 提供接口。`scripts/ai-run-worker.ts` 为正式独立工作进程；`ai-run-test-worker.ts` 仅用于离线测试；`verify-ai-runs-http.mjs` 和 `verify-ai-chat-browser.mjs` 分别验证 HTTP 与真实浏览器链路。接口契约见 `docs/api/ai-runs.md`，交付证据见 `docs/ai/v1-progress.md`。
 
 ```text
 src/

@@ -30,7 +30,7 @@ server.stderr.on("data", (chunk) => { startupLog = (startupLog + chunk).slice(-5
 const children = [server];
 const projectUrl = "/api/projects/test-project/ai/runs";
 const get = (url, init) => fetch(base + url, init);
-const post = (url, data) => get(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
+const post = (url, data) => get(url, { method: "POST", headers: { "Content-Type": "application/json", Origin: base }, body: JSON.stringify(data) });
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 async function offlineWorker(id) {
   const child = spawn(process.execPath, ["--no-warnings", "--experimental-strip-types", "scripts/ai-run-test-worker.ts", file, id, "300"], { windowsHide: true, stdio: "ignore" });

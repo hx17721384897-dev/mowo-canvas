@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { getAssetDatabase } from "@/features/assets/server/database";
 import { getAssetDataPaths } from "@/features/assets/server/data-paths";
 import { RunError, RunStore } from "./run-store";
+export { checkLocalRequest } from "./request-policy";
 
 // The shared migration runner upgrades the existing database before workers open it.
 export async function withRuns<T>(action: (store: RunStore) => T): Promise<T> {
@@ -43,13 +44,6 @@ export function aiError(error: unknown) {
   const known = error instanceof RunError;
   const code = known ? error.code : "INTERNAL_ERROR";
   return Response.json({ code, error: messages[code] ?? "对话服务暂时不可用，请稍后重试。" }, { status: known ? error.status : 500 });
-}
-
-export function checkLocalRequest(request: Request) {
-  const url = new URL(request.url);
-  if (!["localhost", "127.0.0.1", "[::1]"].includes(url.hostname)) throw new RunError("LOCAL_ONLY", 403);
-  const origin = request.headers.get("origin");
-  if ((origin && origin !== url.origin) || request.headers.get("sec-fetch-site") === "cross-site") throw new RunError("LOCAL_ONLY", 403);
 }
 
 export async function readRunInput(request: Request) {
