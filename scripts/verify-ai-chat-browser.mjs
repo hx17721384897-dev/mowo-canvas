@@ -187,6 +187,11 @@ try {
     const runCount = store.db.prepare("SELECT count(*) AS n FROM ai_runs").get().n;
     const messageCount = store.db.prepare("SELECT count(*) AS n FROM ai_messages").get().n;
     await evaluate(`document.querySelector('[aria-label="添加功能"]').click()`);
+    for (const zoom of [1, 1.5, 2]) {
+      const offset = await evaluate(`(()=>{const b=document.querySelector('[aria-label="选择模式"]');b.style.zoom='${zoom}';const t=b.querySelector('span').getBoundingClientRect();const a=b.querySelector('svg:last-child path').getBoundingClientRect();return Math.abs((t.top+t.bottom-a.top-a.bottom)/2)})()`);
+      assert.ok(offset < 1, `Mode caret stays vertically centered at ${zoom}x zoom`);
+    }
+    await evaluate(`document.querySelector('[aria-label="选择模式"]').style.zoom=''`);
     await waitFor(`!!document.querySelector('[aria-label="功能菜单"]')`);
     assert.equal(await evaluate(`document.querySelector('[aria-label="功能菜单"]').querySelectorAll('[role="menuitem"]').length`), 1);
     assert.equal(await evaluate(`document.querySelector('[aria-label="功能菜单"]').textContent.includes('上传文件')`), true);

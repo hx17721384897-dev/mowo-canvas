@@ -56,7 +56,7 @@ export function ChatComposer({ value, onChange, onSend, disabled, configured, ru
     <div className={styles.toolbar}>
       <div className={styles.left}>
         <button className={`${styles.iconButton} ${menu === "tools" ? styles.active : ""}`} type="button" aria-label="添加功能" title="添加" aria-expanded={menu === "tools"} onClick={() => toggle("tools")}><ComposerIcon name="plus" /></button>
-        <button className={`${styles.modeButton} ${menu === "mode" ? styles.active : ""}`} type="button" aria-label="选择模式" title="选择模式" aria-expanded={menu === "mode"} onClick={() => toggle("mode")}><ComposerIcon name="mode" /><span>对话</span><span className={styles.chevron}>⌄</span></button>
+        <button className={`${styles.modeButton} ${menu === "mode" ? styles.active : ""}`} type="button" aria-label="选择模式" title="选择模式" aria-expanded={menu === "mode"} onClick={() => toggle("mode")}><ComposerIcon name="mode" /><span>对话</span><svg className={styles.chevron} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false"><path d="m4 6 4 4 4-4" /></svg></button>
       </div>
       <div className={styles.right}>
         <button className={`${styles.iconButton} ${menu === "model" ? styles.active : ""}`} type="button" aria-label="模型偏好" title="模型偏好" aria-expanded={menu === "model"} onClick={() => toggle("model")}><ComposerIcon name="cube" /></button>

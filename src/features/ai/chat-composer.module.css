@@ -8,9 +8,11 @@
 .composer button { font: inherit; cursor: pointer; }
 .iconButton, .modeButton { display: inline-flex; justify-content: center; align-items: center; flex-shrink: 0; height: 30px; padding: 5px; border: 0; border-radius: 15px; color: #635b6b; background: transparent; }
 .iconButton { width: 30px; }
-.modeButton { gap: 6px; padding: 5px 8px; font-size: 11px !important; }
+.modeButton { gap: 6px; padding: 5px 8px; font-size: 11px !important; line-height: 1; }
+.modeButton > span { display: block; line-height: 16px; }
 .modeButton svg { width: 16px; height: 16px; }
-.chevron { margin-top: -3px; color: #8c8295; font-size: 15px; }
+.modeButton .chevron { display: block; flex: none; width: 12px; height: 12px; color: #8c8295; transition: transform 120ms ease; }
+.modeButton[aria-expanded="true"] .chevron { transform: rotate(180deg); }
 .iconButton:hover, .modeButton:hover, .active { background: #f1eef5; }
 .send { display: grid; place-items: center; flex-shrink: 0; width: 32px; height: 32px; padding: 0; border: 0; border-radius: 50%; color: white; background: #3c3545; }
 .send:hover:not(:disabled) { background: #5a496a; }
