@@ -1,12 +1,13 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useRef, useState, useSyncExternalStore, type FormEvent } from "react";
+import { createContext, useCallback, useContext, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { AssistantRuntimeProvider, MessagePrimitive, ThreadPrimitive, useAuiState, useExternalStoreRuntime, type ThreadMessageLike } from "@assistant-ui/react";
 import { Icon } from "@/app/components/app-icon";
 import { createBrowserSession, runErrorText, type ChatSession, type ChatState } from "./client/chat-session";
 import { isTerminal, type ConversationSummary, type StoredChatMessage } from "./types";
 import { ChatIcon } from "./chat-icons";
 import { ClarificationPreview } from "./clarification-preview";
+import { ChatComposer } from "./chat-composer";
 import styles from "./chat.module.css";
 
 const SessionContext = createContext<{ state: ChatState; session: ChatSession } | null>(null);
@@ -178,8 +179,7 @@ function ConversationPanel({ projectId, onCollapse, expanded, onExpand, conversa
     onNew: async (message) => { await session.send(message.content.filter((part) => part.type === "text").map((part) => part.text).join("\n")); },
     onCancel: () => session.stop(),
   });
-  async function submit(event?: FormEvent) {
-    event?.preventDefault();
+  async function submit() {
     if (disabled || !draft.trim()) return;
     const text = draft;
     if (await session.send(text)) setDraft((current) => current === text ? "" : current);
@@ -221,14 +221,8 @@ function ConversationPanel({ projectId, onCollapse, expanded, onExpand, conversa
       {state.error && <div className={styles.notice} role="alert">{state.error}<button type="button" disabled={state.loading || state.submitting} onClick={() => { void session.refresh(); }}>恢复记录</button></div>}
       {running && <div className={styles.runStatus} role="status">{state.connection === "reconnecting" ? "连接中断，正在核对后台状态…" : state.stopping ? "正在确认停止…" : "正在生成回复…"}</div>}
       {questionPreviewOpen && <ClarificationPreview onClose={() => setQuestionPreviewOpen(false)} />}
-      <form className={styles.composer} onSubmit={(event) => { void submit(event); }}>
-        <textarea aria-label="输入消息" placeholder={state.configuration?.configured ? "输入消息，Enter 发送" : "请先配置语言模型"} rows={3} maxLength={8000} value={draft} onChange={(event) => setDraft(event.target.value)} onKeyDown={(event) => {
-          if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing && event.keyCode !== 229) { event.preventDefault(); void submit(); }
-        }} />
-        <div className={styles.composerFooter}><span title={state.configuration?.configured ? "已配置本机密钥" : "未配置本机密钥"}><span className={state.configuration?.configured ? styles.ready : styles.unconfigured} />DeepSeek Flash</span>{running
-          ? <button type="button" className={styles.stop} disabled={state.stopping} onClick={() => { void session.stop(); }}>{state.stopping ? "停止中…" : "停止"}</button>
-          : <button type="submit" disabled={disabled || !draft.trim()}>{state.submitting ? "发送中…" : "发送"}</button>}</div>
-      </form>
+      <ChatComposer value={draft} onChange={setDraft} onSend={() => { void submit(); }} disabled={disabled} configured={Boolean(state.configuration?.configured)}
+        running={running} stopping={state.stopping} submitting={state.submitting} onStop={() => { void session.stop(); }} onSettings={() => setSettingsOpen(true)} />
       <small className={styles.cost}>发送与重新生成按供应商 API 计费</small>
       <dialog ref={dialog} className={styles.settings} aria-labelledby="language-model-title" onCancel={() => setSettingsOpen(false)} onClose={() => setSettingsOpen(false)}>
         <h3 id="language-model-title">语言模型</h3><p>供应商：DeepSeek</p><p>当前模型：deepseek-flash</p><p>本机配置：{state.configuration?.configured ? "已检测到密钥" : "尚未检测到密钥"}</p>

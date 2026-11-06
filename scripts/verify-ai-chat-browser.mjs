@@ -122,7 +122,7 @@ try {
     await waitFor(`document.body.innerText.includes('可以先确定角色')`);
     store.append(offlineRun.id, "browser-fixture", "每一步都可以在画布上保存和整理。");
     await waitFor(`document.body.innerText.includes('每一步都可以在画布上保存和整理')`);
-    await evaluate(`[...document.querySelectorAll('button')].find(b=>b.textContent==='停止').click()`);
+    await evaluate(`document.querySelector('[aria-label="停止生成"]').click()`);
     await waitFor(`document.body.innerText.includes('已停止')`);
     assert.equal(store.get(offlineRun.id).status, "stopped");
   }
@@ -186,6 +186,29 @@ try {
   if (!live) {
     const runCount = store.db.prepare("SELECT count(*) AS n FROM ai_runs").get().n;
     const messageCount = store.db.prepare("SELECT count(*) AS n FROM ai_messages").get().n;
+    await evaluate(`document.querySelector('[aria-label="添加功能"]').click()`);
+    await waitFor(`!!document.querySelector('[aria-label="功能菜单"]')`);
+    assert.equal(await evaluate(`document.querySelector('[aria-label="功能菜单"]').querySelectorAll('[role="menuitem"]').length`), 1);
+    assert.equal(await evaluate(`document.querySelector('[aria-label="功能菜单"]').textContent.includes('上传文件')`), true);
+    writeFileSync(join(tmpdir(), "mowo-chat-composer-tools.png"), Buffer.from((await cdp("Page.captureScreenshot", { format: "png" })).data, "base64"));
+    await evaluate(`document.querySelector('[aria-label="添加功能"]').click()`);
+    await evaluate(`document.querySelector('[aria-label="选择模式"]').click()`);
+    assert.equal(await evaluate(`[...document.querySelectorAll('[aria-label="模式菜单"] button')].filter(b=>b.disabled).length`), 2);
+    await evaluate(`document.querySelector('[aria-label="选择模式"]').click()`);
+    await evaluate(`document.querySelector('[aria-label="模型偏好"]').click()`);
+    await waitFor(`document.querySelector('[aria-label="模型偏好面板"]')?.textContent.includes('DeepSeek Flash')`);
+    assert.equal(await evaluate(`document.querySelector('[aria-label="自动选择模型"]').disabled`), true);
+    writeFileSync(join(tmpdir(), "mowo-chat-composer-models.png"), Buffer.from((await cdp("Page.captureScreenshot", { format: "png" })).data, "base64"));
+    await evaluate(`document.querySelector('[aria-label="模型偏好"]').click()`);
+    const demoFile = join(root, "upload-preview.txt");
+    writeFileSync(demoFile, "Local UI preview only");
+    const { root: documentNode } = await cdp("DOM.getDocument");
+    const { nodeId } = await cdp("DOM.querySelector", { nodeId: documentNode.nodeId, selector: 'input[type="file"][aria-label="选择上传文件"]' });
+    await cdp("DOM.setFileInputFiles", { nodeId, files: [demoFile] });
+    await waitFor(`document.querySelector('[aria-label="本地文件预览"]')?.textContent.includes('upload-preview.txt')`);
+    assert.equal(await evaluate(`document.querySelector('[aria-label="发送消息"]').disabled`), true);
+    await evaluate(`document.querySelector('[aria-label="移除文件 upload-preview.txt"]').click()`);
+    await waitFor(`!document.querySelector('[aria-label="本地文件预览"]')`);
     await evaluate(`document.querySelector('[aria-label="会话设置菜单"]').click()`);
     await evaluate(`document.querySelector('button[aria-label="提问卡片样式预览"]').click()`);
     await waitFor(`!!document.querySelector('section[aria-label="提问卡片样式预览"]')`);
@@ -224,7 +247,7 @@ try {
   assert.deepEqual(browserErrors, [], "No uncaught browser exceptions");
   const screenshot = process.env.MOWO_TEST_SCREENSHOT ?? join(tmpdir(), "mowo-ai-chat-v1.png");
   writeFileSync(screenshot, Buffer.from((await cdp("Page.captureScreenshot", { format: "png" })).data, "base64"));
-  console.log(`AI chat browser verified (${live ? "one live request" : "offline stream/stop, per-canvas conversations, rename/search/switch, layout and hover controls"}): restored history, collapse/expand, settings dialog, no duplicate runs or browser exceptions. Screenshot: ${screenshot}`);
+  console.log(`AI chat browser verified (${live ? "one live request" : "offline chat, conversations, composer menus/local file preview, question cards"}): restored history, collapse/expand, settings dialog, no duplicate runs or browser exceptions. Screenshot: ${screenshot}`);
 } catch (error) {
   if (socket?.readyState === WebSocket.OPEN && sessionId) {
     try {

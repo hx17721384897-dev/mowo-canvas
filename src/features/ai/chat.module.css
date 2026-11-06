@@ -54,15 +54,7 @@
 .notice button { margin-left: 6px; padding: 2px 4px; border: 0; background: transparent; color: #6c61cc; cursor: pointer; font-size: 11px; }
 .pendingText { overflow: hidden; white-space: pre-wrap; max-height: 38px; margin: 3px 0; color: #969080; }
 .runStatus { margin: 0 0 7px; color: #8a849f; font-size: 10px; }
-.composer { flex-shrink: 0; padding: 10px; border: 1px solid #e6e6f0; border-radius: 11px; background: white; }
-.composer:focus-within { border-color: #aba3f8; box-shadow: 0 0 0 2px #f4f2ff; }
-.composer textarea { display: block; width: 100%; min-width: 0; resize: none; border: 0; outline: 0; color: inherit; background: transparent; font: inherit; font-size: 12px; line-height: 1.6; }
-.composer textarea::placeholder { color: #a3a6b4; }
-.composerFooter { display: flex; justify-content: space-between; align-items: center; gap: 4px; margin-top: 7px; }
-.composerFooter > span { font-size: 9px; color: #a4a7b5; }
-.composerFooter > span > span { display: inline-block; margin-right: 5px; }
-.composer button, .settings button { border: 0; border-radius: 7px; padding: 6px 11px; background: #6c63ef; color: white; font-size: 11px; cursor: pointer; }
-.composer .stop { color: #6c63cf; background: #f0eefb; }
+.settings button { border: 0; border-radius: 7px; padding: 6px 11px; background: #6c63ef; color: white; font-size: 11px; cursor: pointer; }
 .panel button:disabled { cursor: not-allowed; opacity: .45; }
 .panel button:focus-visible, .contextNote summary:focus-visible { outline: 2px solid #9b90ed; outline-offset: 2px; }
 .cost { flex-shrink: 0; margin-top: 7px; color: #a4a6b2; font-size: 9px; text-align: center; }

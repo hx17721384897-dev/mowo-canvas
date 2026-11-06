@@ -26,6 +26,8 @@ MOWO Canvas/
 
 ## 当前代码结构
 
+输入操作栏：`src/features/ai/chat-composer.tsx` 与同名 CSS Module 管理输入、底部菜单和本地文件选择预览；正式聊天发送仍由 `ChatSession` 承担，不在组件里直连模型。
+
 提问卡片：`src/features/ai/clarification-card.tsx` 与同名 CSS Module 为可复用 UI；`clarification-preview.tsx` 仅承载固定示例和本地摘要。最新样式与验证见 `docs/design/prototypes/clarification-card-v01-preview.md`。
 
 AI 对话：`src/features/ai/` 保存类型、聊天组件/图标/样式、客户端恢复状态、会话/运行/消息/事件表、事务存储及调度；`src/app/api/ai/` 与 `src/app/api/projects/[id]/ai/` 提供运行与当前画布会话接口。`scripts/ai-run-worker.ts` 为正式独立工作进程；`ai-run-test-worker.ts` 仅用于离线测试；`verify-ai-runs-http.mjs` 和 `verify-ai-chat-browser.mjs` 分别验证 HTTP 与真实浏览器链路。接口契约见 `docs/api/ai-runs.md`，交付证据见 `docs/ai/v1-progress.md`。
