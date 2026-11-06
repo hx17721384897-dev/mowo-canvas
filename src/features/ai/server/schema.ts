@@ -2,9 +2,19 @@ import { sql } from "drizzle-orm";
 import { index, integer, primaryKey, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 import { projects } from "../../assets/server/schema";
 
+export const aiConversations = sqliteTable("ai_conversations", {
+  id: text("id").primaryKey(),
+  projectId: text("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+  title: text("title").notNull().default("新会话"),
+  customTitle: integer("custom_title", { mode: "boolean" }).notNull().default(false),
+  createdAt: integer("created_at").notNull(),
+  updatedAt: integer("updated_at").notNull(),
+}, (table) => [index("ai_conversation_project_index").on(table.projectId)]);
+
 export const aiRuns = sqliteTable("ai_runs", {
   id: text("id").primaryKey(),
   projectId: text("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+  conversationId: text("conversation_id").references(() => aiConversations.id, { onDelete: "cascade" }),
   clientRequestId: text("client_request_id").notNull(),
   inputHash: text("input_hash").notNull(),
   model: text("model").notNull(),
@@ -20,7 +30,7 @@ export const aiRuns = sqliteTable("ai_runs", {
   updatedAt: integer("updated_at").notNull(),
 }, (table) => [
   uniqueIndex("ai_run_request_unique").on(table.projectId, table.clientRequestId),
-  uniqueIndex("ai_run_active_project_unique").on(table.projectId).where(sql`${table.status} in ('queued', 'running')`),
+  uniqueIndex("ai_run_active_conversation_unique").on(table.conversationId).where(sql`${table.status} in ('queued', 'running')`),
 ]);
 
 export const aiMessages = sqliteTable("ai_messages", {

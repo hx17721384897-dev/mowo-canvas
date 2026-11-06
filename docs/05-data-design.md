@@ -10,6 +10,10 @@
 
 ## 核心实体
 
+### AIConversation（对话会话）
+
+`ai_conversations` 按 projectId 归属画布，保存稳定 ID、名称、是否手动命名和时间；一个画布可有多个会话。`ai_runs.conversation_id` 关联运行，每个会话独立组装上下文，消息与事件仍通过运行关联。迁移 0005 将已有运行归入各自画布的 legacy 会话，不复制消息或重新生成。接口及空会话复用规则见 [AI 对话接口](api/ai-runs.md)。
+
 ### Project
 
 - `id`

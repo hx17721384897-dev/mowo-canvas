@@ -63,6 +63,9 @@ try {
   }
   let offlineRun;
   if (!live) {
+    store.db.prepare("INSERT INTO projects(id,name,created_at,updated_at) VALUES('other-project','其他画布',0,0)").run();
+    const other = store.createConversation("other-project");
+    store.renameConversation("other-project", other.id, "其他画布会话");
     offlineRun = store.create("test-project", "browser-offline-request", "请帮我整理一个动画创作思路。").run;
     store.claim(offlineRun.id, "browser-fixture");
     store.append(offlineRun.id, "browser-fixture", "可以先确定角色、场景与动作，再整理为有顺序的动画帧。");
@@ -132,16 +135,58 @@ try {
   // A canvas viewport draft belongs to the existing editor recovery flow, not chat.
   await evaluate(`[...document.querySelectorAll('dialog[open] button')].find(b=>b.textContent==='保留已保存版本')?.click()`);
   assert.equal(store.db.prepare("SELECT count(*) AS n FROM ai_runs").get().n, 1);
+  await evaluate(`document.querySelector('[aria-label="会话设置菜单"]').click()`);
   await evaluate(`document.querySelector('[aria-label="语言模型设置"]').click()`);
   await waitFor(`!!document.querySelector('dialog[aria-labelledby="language-model-title"][open]')`);
   await evaluate(`[...document.querySelector('dialog[aria-labelledby="language-model-title"][open]').querySelectorAll('button')].find(b=>b.textContent==='关闭').click()`);
   await waitFor(`!document.querySelector('dialog[aria-labelledby="language-model-title"][open]')`);
+  if (!live) {
+    const initialWidth = await evaluate(`document.querySelector('textarea[aria-label="输入消息"]').closest('aside').getBoundingClientRect().width`);
+    await evaluate(`document.querySelector('[aria-label="放大对话区"]').click()`);
+    await delay(300);
+    assert.ok(await evaluate(`document.querySelector('textarea[aria-label="输入消息"]').closest('aside').getBoundingClientRect().width`) > initialWidth + 100);
+    await evaluate(`document.querySelector('[aria-label="还原对话区"]').click()`); await delay(300);
+    assert.ok(Math.abs(await evaluate(`document.querySelector('textarea[aria-label="输入消息"]').closest('aside').getBoundingClientRect().width`) - initialWidth) < 2);
+    const alignment = await evaluate(`(()=>{const times=[...document.querySelectorAll('time')];return times.slice(0,2).map(t=>{const r=t.parentElement.parentElement.firstElementChild.getBoundingClientRect();return {left:r.left,right:r.right}})})()`);
+    assert.ok(alignment[0].left > alignment[1].left + 10, "Questions align to the right, answers to the left");
+    if (await evaluate(`matchMedia('(hover: hover)').matches`)) {
+      await cdp("Input.dispatchMouseEvent", { type: "mouseMoved", x: 10, y: 10 }); await delay(180);
+      assert.equal(await evaluate(`getComputedStyle(document.querySelector('time').parentElement).opacity`), "0");
+      const rect = await evaluate(`(()=>{const r=document.querySelector('time').parentElement.parentElement.firstElementChild.getBoundingClientRect();return {x:r.x+5,y:r.y+5}})()`);
+      await cdp("Input.dispatchMouseEvent", { type: "mouseMoved", ...rect }); await delay(180);
+      assert.equal(await evaluate(`getComputedStyle(document.querySelector('time').parentElement).opacity`), "1");
+    }
+    await evaluate(`document.querySelector('[aria-label="修改会话名称"]').click()`);
+    await evaluate(`(()=>{const i=document.querySelector('[aria-label="会话名称"]');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(i,'动画讨论');i.dispatchEvent(new Event('input',{bubbles:true}));})()`);
+    await evaluate(`document.querySelector('[aria-label="会话名称"]').blur()`);
+    await waitFor(`document.querySelector('[aria-label="修改会话名称"]')?.textContent==='动画讨论'`);
+    await evaluate(`document.querySelector('[aria-label="历史会话"]').click()`);
+    await waitFor(`!!document.querySelector('[aria-label="搜索历史会话"]')`);
+    assert.equal(await evaluate(`document.querySelector('[aria-label="当前画布的历史会话"]').textContent.includes('其他画布会话')`), false);
+    await evaluate(`document.querySelector('[aria-label="重命名 动画讨论"]').click()`);
+    await evaluate(`(()=>{const i=document.querySelector('[aria-label="历史会话名称"]');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(i,'动画讨论二');i.dispatchEvent(new Event('input',{bubbles:true}));})()`);
+    await evaluate(`document.querySelector('[aria-label="历史会话名称"]').blur()`);
+    await waitFor(`document.querySelector('[aria-label="修改会话名称"]')?.textContent==='动画讨论二'`);
+    await evaluate(`(()=>{const i=document.querySelector('[aria-label="搜索历史会话"]');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(i,'没有这个名字');i.dispatchEvent(new Event('input',{bubbles:true}));})()`);
+    await waitFor(`document.body.innerText.includes('没有匹配的会话')`);
+    await evaluate(`document.querySelector('[aria-label="新建会话"]').click()`);
+    await waitFor(`document.querySelector('[aria-label="修改会话名称"]')?.textContent==='新会话' && !document.body.innerText.includes('每一步都可以在画布上保存和整理')`);
+    await evaluate(`document.querySelector('[aria-label="新建会话"]').click()`); await delay(300);
+    assert.equal(store.conversations("test-project").length, 2, "Repeated blank creation does not duplicate drafts");
+    await evaluate(`document.querySelector('[aria-label="历史会话"]').click()`);
+    await evaluate(`[...document.querySelector('[aria-label="当前画布的历史会话"]').querySelectorAll('button')].find(b=>b.textContent.includes('动画讨论二')).click()`);
+    await waitFor(`document.body.innerText.includes('每一步都可以在画布上保存和整理')`);
+    await cdp("Page.reload");
+    await waitFor(`document.querySelector('[aria-label="修改会话名称"]')?.textContent==='动画讨论二'`);
+    await waitFor(`document.body.innerText.includes('每一步都可以在画布上保存和整理') && !document.body.innerText.includes('正在恢复对话')`);
+    await evaluate(`[...document.querySelectorAll('dialog[open] button')].find(b=>b.textContent==='保留已保存版本')?.click()`);
+  }
   const overflow = await evaluate(`(()=>{const panel=document.querySelector('textarea[aria-label="输入消息"]').closest('aside');return panel.scrollWidth>panel.clientWidth+1})()`);
   assert.equal(overflow, false, "Sidebar fits its available width");
   assert.deepEqual(browserErrors, [], "No uncaught browser exceptions");
   const screenshot = process.env.MOWO_TEST_SCREENSHOT ?? join(tmpdir(), "mowo-ai-chat-v1.png");
   writeFileSync(screenshot, Buffer.from((await cdp("Page.captureScreenshot", { format: "png" })).data, "base64"));
-  console.log(`AI chat browser verified (${live ? "one live request" : "offline stream and stop"}): restored history, collapse/expand, settings dialog, no duplicate runs or browser exceptions. Screenshot: ${screenshot}`);
+  console.log(`AI chat browser verified (${live ? "one live request" : "offline stream/stop, per-canvas conversations, rename/search/switch, layout and hover controls"}): restored history, collapse/expand, settings dialog, no duplicate runs or browser exceptions. Screenshot: ${screenshot}`);
 } catch (error) {
   if (socket?.readyState === WebSocket.OPEN && sessionId) {
     try {

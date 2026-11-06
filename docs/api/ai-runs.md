@@ -4,17 +4,25 @@
 
 ## 创建与查询
 
-POST `/api/projects/{projectId}/ai/runs` 接收 JSON `{clientRequestId, message}`，不接受其他字段。消息非空，最多 8000 个 JS 字符；请求标识为 8–100 个英文字母、数字、下划线或连字符，建议使用 UUID。请求体最多 40000 字节。当前固定使用 `deepseek-flash`、关闭思考、最多输出 2048 tokens，密钥仅从服务端 `DEEPSEEK_API_KEY` 读取。
+POST `/api/projects/{projectId}/ai/runs` 接收 JSON `{clientRequestId, message, conversationId?}`，不接受其他字段。显式会话必须属于当前画布；未提供 ID 的旧客户端使用该画布的 legacy 会话。消息非空，最多 8000 个 JS 字符；请求标识为 8–100 个英文字母、数字、下划线或连字符，建议使用 UUID。请求体最多 40000 字节。当前固定使用 `deepseek-flash`、关闭思考、最多输出 2048 tokens，密钥仅从服务端 `DEEPSEEK_API_KEY` 读取。
 
-服务端为每个真实项目提供一个会话，保存独立用户消息、助手消息和运行输入快照。新建或未结束的重复请求返回 202 `{run, created}`；已结束的重复请求返回 200。`run.id` 为后续查询和停止使用的运行 ID。相同项目与请求 ID 唯一；同输入返回已有运行，同 ID 不同输入返回 409。重复请求即使密钥暂时缺失也能查询已有结果。重试不得换 ID；用户明确重新生成才使用新 ID。
+每个真实项目可有多个会话，分别保存消息和上下文；会话历史与搜索只返回当前画布。新建或未结束的重复请求返回 202 `{run, created}`；已结束的重复请求返回 200。`run.id` 为后续查询和停止使用的运行 ID。相同项目与请求 ID 唯一；同输入返回已有运行，同 ID 不同输入或不同会话返回 409。重复请求即使密钥暂时缺失也能查询已有结果。重试不得换 ID；用户明确重新生成才使用新 ID。
 
-输入摘要包含原始消息与固定模型；后端只在第一次创建时组装历史。上下文从最新完整成功的问答对向前截取，最多 40 轮、累计 16000 字符（含当前消息），不切断问答对。中断或失败的回复保存在历史，但不自动加入后续模型上下文。UI 接入时需展示这一截取策略。
+输入摘要包含原始消息、固定模型和会话 ID；后端只在第一次创建时组装该会话的历史。上下文从最新完整成功的问答对向前截取，最多 40 轮、累计 16000 字符（含当前消息），不切断问答对。中断或失败的回复保存在历史，但不自动加入后续模型上下文。升级前的请求摘要在归属会话与原消息一致时仍可幂等恢复。
 
-GET `/api/projects/{projectId}/ai/runs?clientRequestId=...` 返回 `{run}`，用于创建响应丢失后的查询。不带查询参数返回同一读取事务内的 `{messages, activeRun}`，activeRun 为该画布 queued/running 的运行快照或 null。消息按运行创建顺序、用户在助手前排序，包含 id、runId、role、content、status、errorCode、createdAt。会话恢复时直接重新订阅 activeRun，不创建新请求。
+GET `/api/projects/{projectId}/ai/runs?clientRequestId=...&conversationId=...` 返回 `{run}`，用于创建响应丢失后的查询，给定会话时同时验证运行归属。不带 clientRequestId 时返回同一读取事务内的 `{messages, activeRun}`，按可选 conversationId 读取该会话；不传会话 ID 时兼容读取 legacy 会话。activeRun 为该会话 queued/running 的运行快照或 null。消息按运行创建顺序、用户在助手前排序，包含 id、runId、role、content、status、errorCode、createdAt。会话恢复时直接重新订阅 activeRun，不创建新请求。
+
+## 会话管理
+
+- GET `/api/projects/{projectId}/ai/conversations?search=...` 返回 `{conversations}`，仅查询当前画布，搜索按名称包含匹配，最多读取前 100 个搜索字符。结果含 id、projectId、projectName、title、createdAt、updatedAt，按更新时间倒序。
+- POST 同一路径返回 201 `{conversation}`。创建“新会话”；如果已有未改名、未发送消息的空会话则复用，重复点击或创建响应丢失不会积累多个空草稿。此操作不调用模型。
+- PATCH `/api/projects/{projectId}/ai/conversations/{conversationId}` 接收 `{title}`，请求体上限 1024 字节，去首尾空白后为 1–80 个 JS 字符。只允许修改当前画布的会话，返回 `{conversation}`。
+- 第一条提问提交时自动用提问内容命名，合并空白并取前 60 个 Unicode 字符；手动改名后不再覆盖标题。浏览器按画布记住当前选择；切换会话只切换订阅，不停止旧会话的后台运行。
+- `0005_right_miracleman.sql` 为每个有旧运行的画布建立一个 legacy 会话，保留原消息、事件、运行 ID 和请求标识；不复制已有消息或重新调用模型。
 
 GET `/api/ai/status` 返回 `{configured, provider: 'deepseek', model: 'deepseek-flash'}`，只检查服务端 Key 是否非空，不返回 Key、地址或秘密片段，也不发起供应商请求。适用相同的本机与同源限制。
 
-GET `/api/ai/runs/{runId}` 返回 `{run}`。运行包含 id、projectId、clientRequestId、model、status、output、sequence、errorCode、usage、createdAt、updatedAt。时间为毫秒。状态为 queued、running、completed、stopped、failed、interrupted。配置值与内部输入快照不返回客户端。
+GET `/api/ai/runs/{runId}` 返回 `{run}`。运行包含 id、projectId、conversationId、clientRequestId、model、status、output、sequence、errorCode、usage、createdAt、updatedAt。时间为毫秒。状态为 queued、running、completed、stopped、failed、interrupted。配置值与内部输入快照不返回客户端。
 
 ## 订阅与停止
 
@@ -28,7 +36,7 @@ POST `/api/ai/runs/{runId}/stop` 幂等返回 `{run}`。服务器原子提交 st
 
 Next.js 请求只负责创建、查询与订阅；每个运行启动一个独立 Node 子进程，原子领取后才调用供应商。运行领取与所有输出、完成写入校验随机租约令牌和 15 秒有效期，每 250ms 检查及续约。重复调度的进程无法重复领取。页面关闭不影响进程；本机休眠或进程结束不保证继续。
 
-每次 AI 接口请求都会核对过期运行，将其标记 interrupted / WORKER_LOST，保留部分回复，不自动重新付费提交。排队中的未领取运行在创建、历史/状态查询或订阅时重新调度；当前未提供常驻队列守护服务。子进程启动或导入失败记 WORKER_START_FAILED。每个画布最多一个活动运行，全局最多三个；单次运行超时 120 秒。供应商请求不自动重试。
+每次 AI 接口请求都会核对过期运行，将其标记 interrupted / WORKER_LOST，保留部分回复，不自动重新付费提交。排队中的未领取运行在创建、历史/状态查询或订阅时重新调度；当前未提供常驻队列守护服务。子进程启动或导入失败记 WORKER_START_FAILED。每个会话最多一个活动运行，全局最多三个；单次运行超时 120 秒。供应商请求不自动重试。
 
 所有接口限制为实际 Host 是 localhost / 127.0.0.1 / IPv6 loopback 的本机地址，按 Host 对比 Origin，拒绝不同端口/地址的 Origin 与跨站浏览器请求，不信任 x-forwarded-host。不能用 Next 内部可能归一化的 URL 判断浏览器实际来源。当前是本地单用户接口，无账户认证；不得据此作为公网部署方案。项目必须已存在，不为 AI 调用静默创建项目。项目删除时级联清除其对话、运行和事件，旧进程随后失去写入资格。
 
@@ -36,9 +44,9 @@ HTTP 错误返回 `{code,error}`，不泄露密钥、请求头、堆栈或供应
 
 | 状态码 | code |
 | --- | --- |
-| 400 / 413 | INVALID_INPUT |
+| 400 / 413 | INVALID_INPUT / INVALID_TITLE |
 | 403 | LOCAL_ONLY |
-| 404 | PROJECT_NOT_FOUND / RUN_NOT_FOUND |
+| 404 | PROJECT_NOT_FOUND / RUN_NOT_FOUND / CONVERSATION_NOT_FOUND |
 | 409 | REQUEST_CONFLICT / RUN_ACTIVE / INVALID_CURSOR |
 | 429 | CAPACITY_LIMIT |
 | 503 | CONFIG_MISSING |
@@ -50,4 +58,4 @@ HTTP 错误返回 `{code,error}`，不泄露密钥、请求头、堆栈或供应
 
 核心：`src/features/ai/server/run-store.ts`；调度：`run-service.ts`；供应商执行：`scripts/ai-run-worker.ts`；迁移：`drizzle/0004_flat_fixer.sql`。实际生产工作进程依赖项目内 TS 源文件与 scripts 目录，本地运行须保留源码，不能仅复制 .next 目录。
 
-15 项 AI 核心/客户端/来源校验测试、真实 HTTP 离线集成与浏览器离线流式/停止/刷新检查已通过。正式界面到真实 DeepSeek 的成功链路通过一次短请求验证。真实进程强杀后的租约过期、超时及错误分类的供应商实测仍待补充，不视为 V1 整体验收完成。
+18 项 AI 核心/客户端/来源校验测试、真实 HTTP 离线集成与浏览器会话交互检查已通过，包含旧库迁移、当前画布会话范围、改名/搜索/切换、布局与放大/还原。正式界面到真实 DeepSeek 的成功链路此前通过一次短请求验证；会话交互迭代没有新增付费调用。真实进程强杀后的租约过期、超时及错误分类的供应商实测仍待补充，不视为 V1 整体验收完成。

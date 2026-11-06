@@ -16,7 +16,7 @@ export async function POST(request: Request, context: Context) {
         if (!(error instanceof RunError) || error.code !== "RUN_NOT_FOUND") throw error;
         if (!process.env.DEEPSEEK_API_KEY?.trim()) throw new RunError("CONFIG_MISSING", 503);
       }
-      return store.create(id, input.clientRequestId, input.message);
+      return store.create(id, input.clientRequestId, input.message, input.conversationId);
     });
     await dispatchPending();
     return Response.json(result, { status: isTerminal(result.run.status) ? 200 : 202 });
@@ -27,7 +27,15 @@ export async function GET(request: Request, context: Context) {
     checkLocalRequest(request);
     const { id } = await context.params;
     const requestId = new URL(request.url).searchParams.get("clientRequestId");
-    const result = await withRuns((store) => requestId ? { run: store.find(id, requestId) } : store.conversation(id));
+    const conversationId = new URL(request.url).searchParams.get("conversationId") ?? undefined;
+    const result = await withRuns((store) => {
+      if (requestId) {
+        const run = store.find(id, requestId);
+        if (conversationId && store.conversationId(id, conversationId) !== run.conversationId) throw new RunError("RUN_NOT_FOUND", 404);
+        return { run };
+      }
+      return store.conversation(id, conversationId);
+    });
     await dispatchPending();
     return Response.json(result, { headers: { "Cache-Control": "no-store" } });
   } catch (error) { return aiError(error); }

@@ -53,6 +53,7 @@ export function CanvasWorkspace({ initialDocument, projectId, title }: CanvasWor
   const [downloadOpen, setDownloadOpen] = useState(false);
   const [leftWidth, setLeftWidth] = useState(218);
   const [rightWidth, setRightWidth] = useState(284);
+  const [rightExpanded, setRightExpanded] = useState(false);
   const [resizingSide, setResizingSide] = useState<ResizeSide | null>(null);
   const [canvasAssetIds, setCanvasAssetIds] = useState<ReadonlySet<string>>(() => new Set());
   const [assetRefreshKey, setAssetRefreshKey] = useState(0);
@@ -189,7 +190,7 @@ export function CanvasWorkspace({ initialDocument, projectId, title }: CanvasWor
   ].filter(Boolean).join(" ");
   const bodyStyle = {
     "--left-panel-width": `${leftWidth}px`,
-    "--right-panel-width": `${rightWidth}px`,
+    "--right-panel-width": rightExpanded ? `min(760px, max(284px, calc(100vw - ${leftCollapsed ? 0 : leftWidth}px - 80px)))` : `${rightWidth}px`,
   } as CSSProperties;
 
   return (
@@ -317,6 +318,7 @@ export function CanvasWorkspace({ initialDocument, projectId, title }: CanvasWor
         <aside className={styles.chatPanel} aria-hidden={rightCollapsed} inert={rightCollapsed}>
           <button
             aria-label="调整右侧面板宽度"
+            hidden={rightExpanded}
             aria-orientation="vertical"
             aria-valuemax={panelLimits.right.max}
             aria-valuemin={panelLimits.right.min}
@@ -330,7 +332,7 @@ export function CanvasWorkspace({ initialDocument, projectId, title }: CanvasWor
             role="separator"
             type="button"
           />
-          <ChatPanel key={projectId} projectId={projectId} onCollapse={() => setRightCollapsed(true)} />
+          <ChatPanel key={projectId} projectId={projectId} onCollapse={() => setRightCollapsed(true)} expanded={rightExpanded} onExpand={() => setRightExpanded((value) => !value)} />
         </aside>
       </div>
       {downloadOpen ? <ImageDownloadModal projectId={projectId} onClose={() => setDownloadOpen(false)} onImported={() => { setDownloadOpen(false); setLeftView("assets"); }} /> : null}

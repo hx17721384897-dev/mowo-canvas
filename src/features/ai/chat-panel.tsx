@@ -1,10 +1,11 @@
 "use client";
 
-import { createContext, useContext, useEffect, useRef, useState, useSyncExternalStore, type FormEvent } from "react";
+import { createContext, useCallback, useContext, useEffect, useRef, useState, useSyncExternalStore, type FormEvent } from "react";
 import { AssistantRuntimeProvider, MessagePrimitive, ThreadPrimitive, useAuiState, useExternalStoreRuntime, type ThreadMessageLike } from "@assistant-ui/react";
 import { Icon } from "@/app/components/app-icon";
 import { createBrowserSession, runErrorText, type ChatSession, type ChatState } from "./client/chat-session";
-import { isTerminal, type StoredChatMessage } from "./types";
+import { isTerminal, type ConversationSummary, type StoredChatMessage } from "./types";
+import { ChatIcon } from "./chat-icons";
 import styles from "./chat.module.css";
 
 const SessionContext = createContext<{ state: ChatState; session: ChatSession } | null>(null);
@@ -28,7 +29,6 @@ function ChatBubble() {
   const busy = state.submitting || Boolean(state.pending) || Boolean(state.activeRun && !isTerminal(state.activeRun.status));
   const source = state.messages.find((item) => item.runId === message.runId && item.role === "user");
   return <MessagePrimitive.Root className={`${styles.message} ${message.role === "user" ? styles.user : styles.assistant}`}>
-    <div className={styles.messageLabel}>{message.role === "user" ? "你" : "DeepSeek"}</div>
     <div className={styles.messageContent}>
       {message.content ? <MessagePrimitive.Parts /> : <span className={styles.muted}>{statusText[message.status] ?? "暂无回复"}…</span>}
     </div>
@@ -36,6 +36,7 @@ function ChatBubble() {
       {statusText[message.status]}{message.errorCode ? ` · ${runErrorText[message.errorCode] ?? "请稍后再试。"}` : ""}
     </div>}
     <div className={styles.messageActions}>
+      <time dateTime={new Date(message.createdAt).toISOString()}>{new Date(message.createdAt).toLocaleString("zh-CN", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" })}</time>
       {message.content && <button type="button" onClick={async () => {
         try { await navigator.clipboard.writeText(message.content); setCopied(message.content); setCopyFailed(false); }
         catch { setCopyFailed(true); }
@@ -45,11 +46,112 @@ function ChatBubble() {
   </MessagePrimitive.Root>;
 }
 
-export function ChatPanel({ projectId, onCollapse }: { projectId: string; onCollapse: () => void }) {
-  const [session] = useState(() => createBrowserSession(projectId));
+type PanelProps = { projectId: string; onCollapse: () => void; expanded?: boolean; onExpand?: () => void };
+type ConversationProps = PanelProps & {
+  conversation?: ConversationSummary; conversations: ConversationSummary[]; creating: boolean;
+  onNew: () => void; onSelect: (id: string) => void; onRename: (id: string | undefined, title: string) => Promise<boolean>; onActivity: () => void;
+};
+
+async function conversationRequest<T>(path: string, init?: RequestInit): Promise<T> {
+  const response = await fetch(path, { ...init, cache: "no-store", signal: AbortSignal.timeout(15000) });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.error ?? "无法读取会话，请稍后重试。");
+  return data as T;
+}
+
+export function ChatPanel(props: PanelProps) {
+  const [conversations, setConversations] = useState<ConversationSummary[]>([]);
+  const [selected, setSelected] = useState<string | undefined>();
+  const [ready, setReady] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [creating, setCreating] = useState(false);
+  const lock = useRef(false);
+  const loadGeneration = useRef(0);
+  const invalidateLoads = useCallback(() => { ++loadGeneration.current; }, []);
+  const url = `/api/projects/${encodeURIComponent(props.projectId)}/ai/conversations`;
+  const selectionKey = `mowo:ai:selected:${props.projectId}`;
+  const refresh = useCallback(async () => {
+    const generation = ++loadGeneration.current;
+    try {
+      const { conversations: rows } = await conversationRequest<{ conversations: ConversationSummary[] }>(url);
+      if (generation !== loadGeneration.current) return;
+      setConversations(rows); setError(null);
+      setSelected((current) => {
+        let stored: string | null = null;
+        try { stored = localStorage.getItem(selectionKey); } catch {}
+        return rows.find((row) => row.id === current)?.id ?? rows.find((row) => row.id === stored)?.id ?? rows[0]?.id;
+      });
+      setReady(true);
+    } catch (error) { if (generation === loadGeneration.current) setError(error instanceof Error ? error.message : "无法恢复会话列表。"); }
+  }, [url, selectionKey]);
+  useEffect(() => {
+    const timer = window.setTimeout(() => { void refresh(); }, 0);
+    return () => { window.clearTimeout(timer); invalidateLoads(); };
+  }, [refresh, invalidateLoads]);
+  useEffect(() => {
+    if (!selected) return;
+    try { localStorage.setItem(selectionKey, selected); } catch {}
+  }, [selected, selectionKey]);
+  async function newConversation() {
+    if (lock.current) return;
+    lock.current = true; ++loadGeneration.current; setCreating(true);
+    try {
+      const { conversation } = await conversationRequest<{ conversation: ConversationSummary }>(url, { method: "POST" });
+      setConversations((rows) => [conversation, ...rows.filter((row) => row.id !== conversation.id)]);
+      setSelected(conversation.id); setError(null);
+    } catch (error) { setError(error instanceof Error ? error.message : "无法新建会话。"); }
+    finally { lock.current = false; setCreating(false); }
+  }
+  async function rename(id: string | undefined, title: string) {
+    ++loadGeneration.current;
+    try {
+      const target = id ?? (await conversationRequest<{ conversation: ConversationSummary }>(url, { method: "POST" })).conversation.id;
+      const { conversation } = await conversationRequest<{ conversation: ConversationSummary }>(`${url}/${encodeURIComponent(target)}`, {
+        method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ title }),
+      });
+      setConversations((rows) => [conversation, ...rows.filter((row) => row.id !== target)]);
+      if (!id) setSelected(target);
+      setError(null); return true;
+    } catch (error) { setError(error instanceof Error ? error.message : "无法重命名会话。"); return false; }
+  }
+  if (!ready) return <div className={styles.panel}><p className={styles.loading} role="status">{error ?? "正在恢复会话…"}</p>{error && <button type="button" onClick={() => { void refresh(); }}>重试</button>}</div>;
+  const conversation = conversations.find((row) => row.id === selected);
+  return <div className={styles.panelContainer}>
+    {error && <div className={styles.notice} role="alert">{error}</div>}
+    <ConversationPanel key={selected ?? "default"} {...props} conversation={conversation} conversations={conversations} creating={creating}
+      onNew={() => { void newConversation(); }} onSelect={setSelected} onRename={rename} onActivity={refresh} />
+  </div>;
+}
+
+function TitleInput({ title, label, onSave, onDone }: { title: string; label: string; onSave: (value: string) => Promise<boolean>; onDone: () => void }) {
+  const [value, setValue] = useState(title);
+  const saving = useRef(false), cancelled = useRef(false);
+  async function save() {
+    if (cancelled.current || saving.current) return;
+    if (!value.trim() || value.trim() === title) { onDone(); return; }
+    saving.current = true;
+    try { if (await onSave(value)) onDone(); }
+    finally { saving.current = false; }
+  }
+  return <input className={styles.titleInput} aria-label={label} autoFocus maxLength={80} value={value}
+    onFocus={(event) => event.target.select()} onChange={(event) => setValue(event.target.value)} onBlur={() => { void save(); }}
+    onKeyDown={(event) => {
+      if (event.nativeEvent.isComposing) return;
+      if (event.key === "Enter") { event.preventDefault(); event.currentTarget.blur(); }
+      if (event.key === "Escape") { cancelled.current = true; event.preventDefault(); onDone(); }
+    }} />;
+}
+
+function ConversationPanel({ projectId, onCollapse, expanded, onExpand, conversation, conversations, creating, onNew, onSelect, onRename, onActivity }: ConversationProps) {
+  const [session] = useState(() => createBrowserSession(projectId, conversation?.id));
   const state = useSyncExternalStore(session.subscribe, session.getSnapshot, session.getServerSnapshot);
   const [draft, setDraft] = useState("");
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [menu, setMenu] = useState<"history" | "settings" | null>(null);
+  const [editingTitle, setEditingTitle] = useState(false);
+  const [editingHistory, setEditingHistory] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const header = useRef<HTMLElement>(null);
   const dialog = useRef<HTMLDialogElement>(null);
   useEffect(() => {
     session.start();
@@ -57,6 +159,14 @@ export function ChatPanel({ projectId, onCollapse }: { projectId: string; onColl
     window.addEventListener("focus", focus);
     return () => { window.removeEventListener("focus", focus); session.dispose(); };
   }, [session]);
+  const firstMessageId = state.messages[0]?.id;
+  useEffect(() => { if (firstMessageId && !state.submitting) onActivity(); }, [firstMessageId, state.submitting, onActivity]);
+  useEffect(() => {
+    if (!menu) return;
+    const close = (event: PointerEvent) => { if (!header.current?.contains(event.target as Node)) setMenu(null); };
+    document.addEventListener("pointerdown", close);
+    return () => document.removeEventListener("pointerdown", close);
+  }, [menu]);
   useEffect(() => { if (settingsOpen) dialog.current?.showModal(); else dialog.current?.close(); }, [settingsOpen]);
   const running = Boolean(state.activeRun && !isTerminal(state.activeRun.status));
   const disabled = state.loading || !state.historyReady || state.submitting || running || Boolean(state.pending) || !state.configuration?.configured;
@@ -74,14 +184,31 @@ export function ChatPanel({ projectId, onCollapse }: { projectId: string; onColl
   }
   return <SessionContext.Provider value={{ state, session }}><AssistantRuntimeProvider runtime={runtime}>
     <ThreadPrimitive.Root className={styles.panel} onKeyDown={(event) => event.stopPropagation()}>
-      <header className={styles.header}><h2>AI 助手</h2><div>
-        <button aria-label="语言模型设置" title="语言模型设置" type="button" onClick={() => setSettingsOpen(true)}><Icon name="settings" /></button>
-        <button aria-label="折叠右侧对话栏" title="折叠对话栏" type="button" onClick={onCollapse}><Icon name="chevron-right" /></button>
-      </div></header>
-      <div className={styles.model}><span className={state.configuration?.configured ? styles.ready : styles.unconfigured} />
-        <span>DeepSeek Flash</span><small>{state.configuration === null ? "检测配置中" : state.configuration.configured ? "已配置" : "未配置"}</small>
-      </div>
-      <details className={styles.contextNote}><summary>对话范围与上下文</summary><p>当前只发送文字，画布素材不会自动外发。历史按最近完整成功的问答对截取，最多 40 轮、累计 16000 字符；中断回复保留在本地记录中，不自动发送。</p></details>
+      <header ref={header} className={styles.header} onKeyDown={(event) => { if (event.key === "Escape") setMenu(null); }}>
+        <button className={styles.logo} aria-label="会话设置菜单" aria-expanded={menu === "settings"} title="会话设置" type="button" onClick={() => setMenu(menu === "settings" ? null : "settings")}><ChatIcon name="logo" /></button>
+        <div className={styles.titleArea}>{editingTitle
+          ? <TitleInput title={conversation?.title ?? "新会话"} label="会话名称" onSave={(title) => onRename(conversation?.id, title)} onDone={() => setEditingTitle(false)} />
+          : <button className={styles.conversationTitle} type="button" title={conversation?.title ?? "点击修改会话名称"} aria-label="修改会话名称" onClick={() => setEditingTitle(true)}>{conversation?.title ?? "新会话"}</button>}</div>
+        <div className={styles.headerActions}>
+          <button aria-label="新建会话" title="新建会话" type="button" disabled={creating || state.submitting} onClick={onNew}><ChatIcon name="new" /></button>
+          <button aria-label="历史会话" title="当前画布的历史会话" aria-expanded={menu === "history"} type="button" onClick={() => { setMenu(menu === "history" ? null : "history"); onActivity(); }}><ChatIcon name="history" /></button>
+          <button aria-label={expanded ? "还原对话区" : "放大对话区"} title={expanded ? "还原对话区" : "放大对话区"} type="button" onClick={onExpand}><ChatIcon name={expanded ? "restore" : "expand"} /></button>
+          <button aria-label="折叠右侧对话栏" title="折叠对话栏" type="button" onClick={onCollapse}><ChatIcon name="collapse" /></button>
+        </div>
+        {menu === "history" && <div className={styles.historyMenu} aria-label="当前画布的历史会话">
+          <input className={styles.historySearch} aria-label="搜索历史会话" placeholder="搜索当前画布的会话" value={search} onChange={(event) => setSearch(event.target.value)} autoFocus />
+          <div className={styles.historyList}>{conversations.filter((row) => row.title.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase())).map((row) => <div className={`${styles.historyRow} ${row.id === conversation?.id ? styles.historySelected : ""}`} key={row.id}>
+            {editingHistory === row.id ? <TitleInput title={row.title} label="历史会话名称" onSave={(title) => onRename(row.id, title)} onDone={() => setEditingHistory(null)} />
+              : <><button className={styles.historyName} type="button" onClick={() => { setMenu(null); onSelect(row.id); }}><span>{row.title}</span><small>{new Date(row.updatedAt).toLocaleDateString("zh-CN")}</small></button>
+                <button className={styles.renameHistory} aria-label={`重命名 ${row.title}`} title="重命名" type="button" onClick={() => setEditingHistory(row.id)}><ChatIcon name="rename" /></button></>}
+          </div>)}{!conversations.some((row) => row.title.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase())) && <p className={styles.historyEmpty}>没有匹配的会话</p>}</div>
+        </div>}
+        {menu === "settings" && <div className={styles.settingsMenu}>
+          <button type="button" aria-label="语言模型设置" onClick={() => { setMenu(null); setSettingsOpen(true); }}><ChatIcon name="settings" /><span>语言模型设置</span></button>
+          <div className={styles.menuModel}><span className={state.configuration?.configured ? styles.ready : styles.unconfigured} />DeepSeek Flash · {state.configuration?.configured ? "已配置" : "未配置"}</div>
+          <details className={styles.contextNote}><summary>对话范围与上下文</summary><p>当前只发送文字，画布素材不会自动外发。只使用当前会话最近完整成功的问答，最多 40 轮、累计 16000 字符；中断回复不会自动发送。</p></details>
+        </div>}
+      </header>
       <ThreadPrimitive.Viewport className={styles.viewport}>
         {state.loading && <p className={styles.loading} role="status">正在恢复对话…</p>}
         {!state.loading && state.messages.length === 0 && <div className={styles.empty}><span><Icon name="sparkles" /></span><strong>从一句话开始</strong><p>讨论想法、整理思路。对话记录保存在当前画布。</p></div>}
@@ -94,7 +221,7 @@ export function ChatPanel({ projectId, onCollapse }: { projectId: string; onColl
         <textarea aria-label="输入消息" placeholder={state.configuration?.configured ? "输入消息，Enter 发送" : "请先配置语言模型"} rows={3} maxLength={8000} value={draft} onChange={(event) => setDraft(event.target.value)} onKeyDown={(event) => {
           if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing && event.keyCode !== 229) { event.preventDefault(); void submit(); }
         }} />
-        <div className={styles.composerFooter}><span>Shift + Enter 换行</span>{running
+        <div className={styles.composerFooter}><span title={state.configuration?.configured ? "已配置本机密钥" : "未配置本机密钥"}><span className={state.configuration?.configured ? styles.ready : styles.unconfigured} />DeepSeek Flash</span>{running
           ? <button type="button" className={styles.stop} disabled={state.stopping} onClick={() => { void session.stop(); }}>{state.stopping ? "停止中…" : "停止"}</button>
           : <button type="submit" disabled={disabled || !draft.trim()}>{state.submitting ? "发送中…" : "发送"}</button>}</div>
       </form>

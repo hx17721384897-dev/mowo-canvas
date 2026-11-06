@@ -13,7 +13,7 @@ async function ready(session: ChatSession) {
   for (let i = 0; i < 100 && session.getSnapshot().loading; i++) await new Promise((resolve) => setTimeout(resolve, 1));
   assert.equal(session.getSnapshot().loading, false);
 }
-function fixture(handler: (path: string, init?: RequestInit) => Promise<unknown>, writeFailure = false) {
+function fixture(handler: (path: string, init?: RequestInit) => Promise<unknown>, writeFailure = false, conversationId?: string) {
   let pending: { clientRequestId: string; message: string } | null = null;
   let ids = 0;
   const streams: Pick<EventSource, "close" | "onmessage" | "onerror">[] = [];
@@ -23,7 +23,7 @@ function fixture(handler: (path: string, init?: RequestInit) => Promise<unknown>
     readPending: () => pending,
     writePending: (value) => { if (writeFailure) throw new Error("No storage"); pending = value; },
     stream: () => { const stream = { close() {}, onmessage: null, onerror: null }; streams.push(stream); return stream; },
-  });
+  }, conversationId);
   session.start();
   return { session, streams };
 }
@@ -120,5 +120,21 @@ test("提交成功但历史刷新失败时保留已知运行，禁止再次付�
     assert.equal(session.getSnapshot().activeRun?.id, run.id);
     assert.equal(await session.send("测试消息"), false);
     assert.equal(posts, 1);
+  } finally { session.dispose(); }
+});
+
+test("切换会话后发送和丢失响应核对始终携带原会话 ID", async () => {
+  const paths: string[] = [];
+  let body: { conversationId?: string } = {};
+  const { session } = fixture(async (path, init) => {
+    paths.push(path);
+    if (init?.method === "POST") { body = JSON.parse(String(init.body)); throw new Error("Response lost"); }
+    if (path.includes("clientRequestId=")) return { run: { ...run, conversationId: "thread-A" } };
+    return { messages: [], activeRun: null };
+  }, false, "thread-A");
+  try {
+    await ready(session); await session.send("测试消息"); await session.resolvePending(true);
+    assert.equal(body.conversationId, "thread-A");
+    assert.ok(paths.some((path) => path.includes("?conversationId=thread-A&clientRequestId=request-0001")));
   } finally { session.dispose(); }
 });

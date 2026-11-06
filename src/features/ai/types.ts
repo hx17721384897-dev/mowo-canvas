@@ -11,9 +11,13 @@ export type StoredChatMessage = {
 };
 export type ConversationSnapshot = { messages: StoredChatMessage[]; activeRun: AiRun | null };
 export type AiConfiguration = { configured: boolean; provider: "deepseek"; model: "deepseek-flash" };
+export type ConversationSummary = {
+  id: string; projectId: string; projectName: string; title: string; createdAt: number; updatedAt: number;
+};
 export type AiRun = {
   id: string;
   projectId: string;
+  conversationId?: string;
   clientRequestId: string;
   model: string;
   status: RunStatus;

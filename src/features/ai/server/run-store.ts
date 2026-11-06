@@ -1,9 +1,9 @@
 import Database from "better-sqlite3";
 import { createHash, randomUUID } from "node:crypto";
-import type { AiRun, ChatMessage, ConversationSnapshot, RunStatus, StoredChatMessage } from "../types.ts";
+import type { AiRun, ChatMessage, ConversationSnapshot, ConversationSummary, RunStatus, StoredChatMessage } from "../types.ts";
 
 type Row = {
-  id: string; project_id: string; client_request_id: string; input_hash: string;
+  id: string; project_id: string; conversation_id: string | null; client_request_id: string; input_hash: string;
   model: string; input_json: string; status: RunStatus; output: string; sequence: number;
   error_code: string | null; usage_json: string | null; lease_token: string | null;
   lease_until: number | null; created_at: number; updated_at: number;
@@ -30,7 +30,7 @@ export class RunStore {
   row(id: string) { return this.db.prepare("SELECT * FROM ai_runs WHERE id = ?").get(id) as Row | undefined; }
   view(row: Row): AiRun {
     return { id: row.id, projectId: row.project_id, clientRequestId: row.client_request_id,
-      model: row.model, status: row.status, output: row.output, sequence: row.sequence,
+      conversationId: row.conversation_id ?? undefined, model: row.model, status: row.status, output: row.output, sequence: row.sequence,
       errorCode: row.error_code, usage: row.usage_json ? JSON.parse(row.usage_json) : null,
       createdAt: row.created_at, updatedAt: row.updated_at };
   }
@@ -48,36 +48,72 @@ export class RunStore {
     if (!row) throw new RunError("RUN_NOT_FOUND", 404);
     return this.view(row);
   }
-  history(projectId: string) {
+  conversationId(projectId: string, requested?: string) {
     this.projectExists(projectId);
-    return this.db.prepare(`SELECT m.id, m.run_id AS runId, m.role, m.content, m.status, r.error_code AS errorCode, m.created_at AS createdAt
-      FROM ai_messages m JOIN ai_runs r ON m.run_id = r.id WHERE r.project_id = ?
-      ORDER BY r.created_at, r.rowid, CASE m.role WHEN 'user' THEN 0 ELSE 1 END`).all(projectId) as StoredChatMessage[];
+    const id = requested ?? `legacy:${projectId}`;
+    if (requested && !this.db.prepare("SELECT 1 FROM ai_conversations WHERE id=? AND project_id=?").get(id, projectId)) throw new RunError("CONVERSATION_NOT_FOUND", 404);
+    return id;
   }
-  conversation(projectId: string): ConversationSnapshot {
+  conversations(projectId: string, search = ""): ConversationSummary[] {
+    this.projectExists(projectId);
+    return this.db.prepare(`SELECT c.id,c.project_id AS projectId,p.name AS projectName,c.title,c.created_at AS createdAt,c.updated_at AS updatedAt
+      FROM ai_conversations c JOIN projects p ON p.id=c.project_id
+      WHERE c.project_id=? AND instr(lower(c.title),lower(?))>0
+      ORDER BY c.updated_at DESC,c.created_at DESC,c.id`).all(projectId, search.trim()) as ConversationSummary[];
+  }
+  createConversation(projectId: string) {
     return this.db.transaction(() => {
-      const messages = this.history(projectId);
-      const row = this.db.prepare("SELECT * FROM ai_runs WHERE project_id=? AND status IN ('queued','running')").get(projectId) as Row | undefined;
+      this.projectExists(projectId);
+      // Repeated clicks or a lost create response reuse the same untouched blank.
+      const blank = this.db.prepare(`SELECT id FROM ai_conversations c WHERE project_id=? AND custom_title=0
+        AND NOT EXISTS (SELECT 1 FROM ai_runs r WHERE r.conversation_id=c.id) ORDER BY created_at DESC LIMIT 1`).get(projectId) as { id: string } | undefined;
+      const id = blank?.id ?? randomUUID(), now = Date.now();
+      if (!blank) this.db.prepare("INSERT INTO ai_conversations (id,project_id,title,custom_title,created_at,updated_at) VALUES (?,?,'新会话',0,?,?)").run(id, projectId, now, now);
+      return this.conversations(projectId).find((item) => item.id === id)!;
+    }).immediate();
+  }
+  renameConversation(projectId: string, id: string, title: string) {
+    this.conversationId(projectId, id);
+    const name = title.trim();
+    if (!name || name.length > 80) throw new RunError("INVALID_TITLE");
+    this.db.prepare("UPDATE ai_conversations SET title=?,custom_title=1,updated_at=? WHERE id=? AND project_id=?").run(name, Date.now(), id, projectId);
+    return this.conversations(projectId).find((item) => item.id === id)!;
+  }
+  history(projectId: string, requestedConversationId?: string) {
+    this.projectExists(projectId);
+    const conversationId = this.conversationId(projectId, requestedConversationId);
+    return this.db.prepare(`SELECT m.id, m.run_id AS runId, m.role, m.content, m.status, r.error_code AS errorCode, m.created_at AS createdAt
+      FROM ai_messages m JOIN ai_runs r ON m.run_id = r.id WHERE r.project_id = ? AND r.conversation_id=?
+      ORDER BY r.created_at, r.rowid, CASE m.role WHEN 'user' THEN 0 ELSE 1 END`).all(projectId, conversationId) as StoredChatMessage[];
+  }
+  conversation(projectId: string, requestedConversationId?: string): ConversationSnapshot {
+    return this.db.transaction(() => {
+      const messages = this.history(projectId, requestedConversationId);
+      const id = this.conversationId(projectId, requestedConversationId);
+      const row = this.db.prepare("SELECT * FROM ai_runs WHERE project_id=? AND conversation_id=? AND status IN ('queued','running')").get(projectId, id) as Row | undefined;
       return { messages, activeRun: row ? this.view(row) : null };
     }).deferred();
   }
-  create(projectId: string, requestId: string, message: string) {
+  create(projectId: string, requestId: string, message: string, requestedConversationId?: string) {
     if (!/^[A-Za-z0-9_-]{8,100}$/.test(requestId) || !message.trim() || message.length > MAX_INPUT_CHARS) throw new RunError("INVALID_INPUT");
     const model = "deepseek-flash";
-    const hash = createHash("sha256").update(JSON.stringify({ message, model })).digest("hex");
     return this.db.transaction(() => {
       this.projectExists(projectId);
+      const conversationId = this.conversationId(projectId, requestedConversationId);
+      const hash = createHash("sha256").update(JSON.stringify({ message, model, conversationId })).digest("hex");
       const existing = this.db.prepare("SELECT * FROM ai_runs WHERE project_id = ? AND client_request_id = ?").get(projectId, requestId) as Row | undefined;
       if (existing) {
-        if (existing.input_hash !== hash) throw new RunError("REQUEST_CONFLICT", 409);
+        // Legacy hashes were computed before conversation IDs existed.
+        const oldHash = createHash("sha256").update(JSON.stringify({ message, model })).digest("hex");
+        if (existing.input_hash !== hash && !(existing.conversation_id === conversationId && existing.input_hash === oldHash)) throw new RunError("REQUEST_CONFLICT", 409);
         return { run: this.view(existing), created: false };
       }
-      if (this.db.prepare("SELECT 1 FROM ai_runs WHERE project_id = ? AND status IN ('queued', 'running')").get(projectId)) throw new RunError("RUN_ACTIVE", 409);
+      if (this.db.prepare("SELECT 1 FROM ai_runs WHERE conversation_id = ? AND status IN ('queued', 'running')").get(conversationId)) throw new RunError("RUN_ACTIVE", 409);
       const active = this.db.prepare("SELECT count(*) AS n FROM ai_runs WHERE status IN ('queued','running')").get() as { n: number };
       if (active.n >= 3) throw new RunError("CAPACITY_LIMIT", 429);
       const messages: ChatMessage[] = [];
       let budget = CONTEXT_CHARS - message.length;
-      const rows = this.db.prepare("SELECT * FROM ai_runs WHERE project_id = ? AND status = 'completed' ORDER BY created_at DESC, rowid DESC LIMIT 40").all(projectId) as Row[];
+      const rows = this.db.prepare("SELECT * FROM ai_runs WHERE project_id = ? AND conversation_id=? AND status = 'completed' ORDER BY created_at DESC, rowid DESC LIMIT 40").all(projectId, conversationId) as Row[];
       for (const row of rows) {
         const input = JSON.parse(row.input_json) as ChatMessage[];
         const user = input.at(-1)!;
@@ -87,8 +123,12 @@ export class RunStore {
       }
       messages.push({ role: "user", content: message });
       const id = randomUUID(), now = Date.now();
-      this.db.prepare(`INSERT INTO ai_runs (id,project_id,client_request_id,input_hash,model,input_json,status,created_at,updated_at)
-        VALUES (?,?,?,?,?,?,'queued',?,?)`).run(id, projectId, requestId, hash, model, JSON.stringify(messages), now, now);
+      this.db.prepare("INSERT OR IGNORE INTO ai_conversations (id,project_id,title,custom_title,created_at,updated_at) VALUES (?,?,'新会话',0,?,?)").run(conversationId, projectId, now, now);
+      const first = !this.db.prepare("SELECT 1 FROM ai_runs WHERE conversation_id=?").get(conversationId);
+      const title = Array.from(message.replace(/\s+/g, " ").trim()).slice(0, 60).join("");
+      this.db.prepare("UPDATE ai_conversations SET title=CASE WHEN custom_title=0 AND ? THEN ? ELSE title END,updated_at=? WHERE id=?").run(first ? 1 : 0, title, now, conversationId);
+      this.db.prepare(`INSERT INTO ai_runs (id,project_id,conversation_id,client_request_id,input_hash,model,input_json,status,created_at,updated_at)
+        VALUES (?,?,?,?,?,?,?,'queued',?,?)`).run(id, projectId, conversationId, requestId, hash, model, JSON.stringify(messages), now, now);
       const insert = this.db.prepare("INSERT INTO ai_messages (id,run_id,role,content,status,created_at) VALUES (?,?,?,?,?,?)");
       insert.run(randomUUID(), id, "user", message, "submitted", now);
       insert.run(randomUUID(), id, "assistant", "", "queued", now);

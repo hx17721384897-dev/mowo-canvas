@@ -39,8 +39,10 @@ export class ChatSession {
   private polling = false;
   private projectUrl: string;
   private dependencies: Dependencies;
-  constructor(projectId: string, dependencies: Dependencies) {
-    this.projectUrl = `/api/projects/${encodeURIComponent(projectId)}/ai/runs`;
+  private conversationId: string | undefined;
+  constructor(projectId: string, dependencies: Dependencies, conversationId?: string) {
+    this.conversationId = conversationId;
+    this.projectUrl = `/api/projects/${encodeURIComponent(projectId)}/ai/runs${conversationId ? `?conversationId=${encodeURIComponent(conversationId)}` : ""}`;
     this.dependencies = dependencies;
   }
   getSnapshot = () => this.state;
@@ -100,7 +102,7 @@ export class ChatSession {
     const epoch = this.epoch;
     this.update({ submitting: true, error: null });
     try {
-      const { run } = await this.dependencies.request<{ run: AiRun }>(this.projectUrl, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(pending) });
+      const { run } = await this.dependencies.request<{ run: AiRun }>(this.projectUrl, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...pending, ...(this.conversationId ? { conversationId: this.conversationId } : {}) }) });
       if (!this.live(epoch)) return true;
       this.update({ activeRun: run, messages: this.state.messages.some((message) => message.runId === run.id) ? this.state.messages : [
         ...this.state.messages,
@@ -127,7 +129,7 @@ export class ChatSession {
     if (!pending || this.state.submitting) return;
     this.update({ submitting: true, error: null });
     try {
-      const { run } = await this.dependencies.request<{ run: AiRun }>(`${this.projectUrl}?clientRequestId=${encodeURIComponent(pending.clientRequestId)}`);
+      const { run } = await this.dependencies.request<{ run: AiRun }>(`${this.projectUrl}${this.projectUrl.includes("?") ? "&" : "?"}clientRequestId=${encodeURIComponent(pending.clientRequestId)}`);
       if (!this.live(epoch)) return;
       this.update({ activeRun: run });
       this.remember(null);
@@ -214,18 +216,23 @@ export class ChatSession {
   }
 }
 
-export function createBrowserSession(projectId: string) {
-  const key = `mowo:ai:pending:${projectId}`;
+export function createBrowserSession(projectId: string, conversationId?: string) {
+  const legacyKey = `mowo:ai:pending:${projectId}`;
+  const key = conversationId ? `${legacyKey}:${conversationId}` : legacyKey;
+  const legacy = !conversationId || conversationId === `legacy:${projectId}`;
   return new ChatSession(projectId, {
     uuid: () => crypto.randomUUID(),
     readPending: () => {
-      const raw = localStorage.getItem(key);
+      const raw = localStorage.getItem(key) ?? (legacy ? localStorage.getItem(legacyKey) : null);
       if (!raw) return null;
       const value = JSON.parse(raw);
       if (typeof value?.message !== "string" || value.message.length > 8000 || !/^[A-Za-z0-9_-]{8,100}$/.test(value.clientRequestId)) throw new Error("本地发送恢复记录无效，请检查浏览器存储。");
       return value as PendingRequest;
     },
-    writePending: (pending) => { if (pending) localStorage.setItem(key, JSON.stringify(pending)); else localStorage.removeItem(key); },
+    writePending: (pending) => {
+      if (pending) localStorage.setItem(key, JSON.stringify(pending));
+      else { localStorage.removeItem(key); if (legacy) localStorage.removeItem(legacyKey); }
+    },
     stream: (path) => new EventSource(path),
     request: async <T>(path: string, init?: RequestInit): Promise<T> => {
       const response = await fetch(path, { ...init, cache: "no-store", signal: AbortSignal.timeout(15000) });
@@ -233,5 +240,5 @@ export function createBrowserSession(projectId: string) {
       if (!response.ok) throw new ChatRequestError(data.code ?? "HTTP_ERROR", data.error ?? "对话服务暂不可用。");
       return data as T;
     },
-  });
+  }, conversationId);
 }

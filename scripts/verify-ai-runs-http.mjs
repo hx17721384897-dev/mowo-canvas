@@ -80,6 +80,17 @@ try {
   const third = store.create("test-project", "expired-request", "重启核对").run;
   store.claim(third.id, "lost-worker", Date.now() - LEASE_MS - 1);
   assert.equal((await (await get(`/api/ai/runs/${third.id}`)).json()).run.status, "interrupted");
+  const conversationUrl = "/api/projects/test-project/ai/conversations";
+  const createdConversation = (await (await post(conversationUrl, {})).json()).conversation;
+  assert.equal((await (await post(conversationUrl, {})).json()).conversation.id, createdConversation.id);
+  const renamed = await get(`${conversationUrl}/${encodeURIComponent(createdConversation.id)}`, {
+    method: "PATCH", headers: { "Content-Type": "application/json", Origin: base }, body: JSON.stringify({ title: "HTTP 会话验收" }),
+  });
+  assert.equal(renamed.status, 200);
+  const filtered = (await (await get(conversationUrl + "?search=" + encodeURIComponent("HTTP 会话"))).json()).conversations;
+  assert.equal(filtered.length, 1); assert.equal(filtered[0].id, createdConversation.id);
+  assert.equal((await (await get(projectUrl + "?conversationId=" + encodeURIComponent(createdConversation.id))).json()).messages.length, 0);
+  assert.equal((await get(projectUrl + "?conversationId=missing")).status, 404);
   console.log("AI HTTP verified: subscription cancellation, replay, retry/conflict, stop, history, lease recovery, local-origin and missing-key errors. No provider requests.");
 } finally {
   for (const child of children) {
