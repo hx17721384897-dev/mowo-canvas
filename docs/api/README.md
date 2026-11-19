@@ -4,6 +4,13 @@
 
 当前业务接口：
 
+- [视频拆帧任务与内部执行契约](video-frame-extraction.md)：动画/拍摄分支、超限确认、持久任务、幂等和共用草稿。
+
+- [视频引擎协议](video-engine.md)：扫码、下载、媒体检查、封面与转码的内部进程通信。
+- [视频下载任务](video-downloads.md)：扫码、解析、单执行者下载、取消/重试、确认入库与兼容预览。
+- [视频编辑页分镜任务](video-editor-shots.md)：手动启动、进度、取消及结果读取。
+- [视频剪辑工程](video-editor-cutting.md)：片段序列自动保存、读取、源帧范围和版本校验。
+
 - `assets.md`：本地资产查询、图片导入、跨项目引用与内容读取。
 - `download-tasks.md`：LINE 图片下载任务、进度、预览、取消与资产导入。
 - `projects-and-canvas.md`：本地项目创建、列表以及画布文档读取与保存。

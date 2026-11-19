@@ -9,10 +9,11 @@ type Props = {
   initialSourceId: string;
   task: FrameExtractionTask;
   onClose: () => void;
-  onPlace: (sourceId: string) => void;
+  onPlace?: (sourceId: string) => void;
+  onCropEdit?: () => void;
 };
 
-export function FrameSequenceViewer({ initialSourceId, task, onClose, onPlace }: Props) {
+export function FrameSequenceViewer({ initialSourceId, task, onClose, onPlace, onCropEdit }: Props) {
   const sources = useMemo(() => task.sources.filter((source) => source.status !== "failed"), [task]);
   const [sourceId, setSourceId] = useState(initialSourceId);
   const [frameIndex, setFrameIndex] = useState(0);
@@ -45,7 +46,7 @@ export function FrameSequenceViewer({ initialSourceId, task, onClose, onPlace }:
           </section>
           <section className={styles.framePane}><h3>全部帧</h3><div className={styles.grid}>{frames.map((item, index) => <button className={index === frameIndex ? styles.active : ""} key={item.id} onClick={() => chooseFrame(index)} type="button"><span><Image alt="" fill sizes="90px" src={item.previewUrl} unoptimized /></span><small>{String(index + 1).padStart(3, "0")} · {item.durationMs}ms</small></button>)}</div></section>
         </div>
-        <footer><button onClick={onClose} type="button">关闭</button><button className={styles.primary} onClick={() => onPlace(source.id)} type="button">将本组放入画布</button></footer>
+        <footer><button onClick={onClose} type="button">关闭</button>{onCropEdit && <button className={styles.primary} onClick={onCropEdit} type="button">裁切编辑</button>}{onPlace && !source.manualGroupId && <button className={styles.primary} onClick={() => onPlace(source.id)} type="button">将本组放入画布</button>}</footer>
       </section>
     </div>
   );

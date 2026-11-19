@@ -1,7 +1,11 @@
 {
   "compilerOptions": {
     "target": "ES2017",
-    "lib": ["dom", "dom.iterable", "esnext"],
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
@@ -20,7 +24,9 @@
       }
     ],
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": [
+        "./src/*"
+      ]
     }
   },
   "include": [
@@ -29,7 +35,28 @@
     "**/*.tsx",
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts",
-    "**/*.mts"
+    "**/*.mts",
+    ".next-editor-test/types/**/*.ts",
+    ".next-editor-test/dev/types/**/*.ts",
+    ".next-editor-shots-test/types/**/*.ts",
+    ".next-editor-shots-test/dev/types/**/*.ts",
+    ".next-shot-real-test/types/**/*.ts",
+    ".next-shot-real-test/dev/types/**/*.ts",
+    ".next-cutting-step-test/types/**/*.ts",
+    ".next-cutting-step-test/dev/types/**/*.ts",
+    ".next-cutting-step-two-test/types/**/*.ts",
+    ".next-cutting-step-two-test/dev/types/**/*.ts",
+    ".next-cutting-step-three-test/types/**/*.ts",
+    ".next-cutting-step-three-test/dev/types/**/*.ts",
+    ".next-cutting-step-four-test/types/**/*.ts",
+    ".next-cutting-step-four-test/dev/types/**/*.ts",
+    ".next-cutting-step-five-test/types/**/*.ts",
+    ".next-cutting-step-five-test/dev/types/**/*.ts",
+    ".next-video-frame-jobs-test/types/**/*.ts",
+    ".next-video-frame-jobs-test/dev/types/**/*.ts"
   ],
-  "exclude": ["node_modules"]
+  "exclude": [
+    "node_modules",
+    "data"
+  ]
 }

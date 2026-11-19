@@ -8,14 +8,21 @@
     "npm": ">=10.9.2 <11"
   },
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
+    "test:video-frames": "node scripts/video/verify-frame-sequence-tests.mjs",
+    "dev": "node scripts/video/run-app.mjs dev --video --webpack -H 127.0.0.1",
+    "build": "next build --webpack",
+    "start": "node scripts/video/run-app.mjs start --video -H 127.0.0.1",
+    "dev:video": "node scripts/video/run-app.mjs dev --video --webpack -H 127.0.0.1",
+    "start:video": "node scripts/video/run-app.mjs start --video -H 127.0.0.1",
+    "video:setup": "powershell -NoProfile -File scripts/video/setup-runtime.ps1 && powershell -NoProfile -File scripts/video/setup-media.ps1",
+    "video:setup-shots": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/video/setup-shots.ps1",
+    "test:video-engine": "node scripts/video/verify-runtime.mjs && node scripts/video/verify-engine.mjs && node scripts/video/verify-managed-engine.mjs",
     "test:ai": "node --no-warnings --experimental-strip-types --test src/features/ai/server/run-store.test.ts src/features/ai/server/request-policy.test.ts src/features/ai/client/chat-session.test.ts",
-    "test": "node --no-warnings --experimental-strip-types src/features/assets/downloaders/server/apng.test.ts && node --no-warnings --experimental-strip-types src/features/frame-extraction/server/apng-frame-decoder.test.ts && node scripts/verify-migrations.mjs",
+    "test:video": "node --no-warnings --experimental-strip-types --test src/features/video-downloads/server/task-store.test.ts src/features/video-downloads/server/http.test.ts src/features/video-downloads/server/resolve-video.test.ts src/features/video-downloads/server/import-video.test.ts src/features/video-downloads/server/maintenance.test.ts",
+    "test": "node --no-warnings --experimental-strip-types src/features/assets/downloaders/server/apng.test.ts && node --no-warnings --experimental-strip-types src/features/frame-extraction/server/apng-frame-decoder.test.ts && node --no-warnings --experimental-strip-types src/features/frame-extraction/server/draft-retention.test.ts && node --no-warnings --experimental-strip-types src/features/projects/canvas-document.test.ts && node --no-warnings --experimental-strip-types src/features/canvas/group-layout.test.ts && node --no-warnings --experimental-strip-types src/features/canvas/group-quick-actions.test.ts && node --no-warnings --experimental-strip-types src/features/canvas/group-export.test.ts && node --no-warnings --experimental-strip-types src/features/assets/group-export-zip.test.ts && node --no-warnings --experimental-strip-types src/features/canvas/image-import-order.test.ts && node --no-warnings --experimental-strip-types src/features/canvas/image-crop.test.ts && node --no-warnings --experimental-strip-types src/features/frame-extraction/stitch-layout.test.ts && node --no-warnings --experimental-strip-types src/features/assets/server/video-import.test.ts && node scripts/verify-migrations.mjs",
     "lint": "eslint",
     "typecheck": "next typegen && tsc --noEmit",
-    "check": "npm run test && npm run test:ai && npm run lint && npm run typecheck && npm run build",
+    "check": "npm run test && npm run test:video-frames && npm run test:ai && npm run test:video && npm run lint && npm run typecheck && npm run build",
     "db:generate": "drizzle-kit generate"
   },
   "dependencies": {

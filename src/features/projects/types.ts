@@ -11,6 +11,7 @@ export type ProjectSummary = {
 
 export type CanvasDocumentState = {
   schemaVersion: 1;
+  groupContentScaleEnabled?: boolean;
   nodes: CanvasNode[];
   edges: Edge[];
   viewport: Viewport;

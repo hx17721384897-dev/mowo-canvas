@@ -43,6 +43,90 @@
       "when": 1793928107888,
       "tag": "0005_right_miracleman",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1794465550198,
+      "tag": "0006_video-download-tasks",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1794471183054,
+      "tag": "0007_video-asset-metadata",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1794530958962,
+      "tag": "0008_productive_arclight",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1794531601310,
+      "tag": "0009_overconfident_prodigy",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "6",
+      "when": 1794828197381,
+      "tag": "0010_broken_sauron",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "6",
+      "when": 1794876799923,
+      "tag": "0011_free_wallflower",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "6",
+      "when": 1794878763805,
+      "tag": "0012_lethal_mandrill",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "6",
+      "when": 1794907327738,
+      "tag": "0013_curved_karnak",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "6",
+      "when": 1794914729232,
+      "tag": "0014_fresh_spencer_smythe",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "6",
+      "when": 1794914899790,
+      "tag": "0015_magenta_xorn",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "6",
+      "when": 1794968836369,
+      "tag": "0016_wooden_risque",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "6",
+      "when": 1794970042009,
+      "tag": "0017_windy_zemo",
+      "breakpoints": true
     }
   ]
 }

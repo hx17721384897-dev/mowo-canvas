@@ -1,0 +1,67 @@
+.backdrop { position: fixed; z-index: 12000; inset: 0; display: grid; place-items: center; padding: 20px; background: #17182388; }
+.dialog { width: min(1120px, 100%); max-height: calc(100vh - 40px); overflow: auto; padding: 22px; border: 1px solid #e5e4eb; border-radius: 20px; background: #fff; box-shadow: 0 24px 80px #1113; color: #303441; }
+.dialog header { display: flex; justify-content: space-between; align-items: start; gap: 20px; border-bottom: 1px solid #eeeef4; padding-bottom: 15px; }
+.dialog h2 { margin: 0; font-size: 20px; }.dialog h3 { margin: 12px 0; font-size: 14px; }.dialog p { color: #777d8b; font-size: 12px; }
+.dialog button, .dialog select, .dialog input { font: inherit; }.dialog button { cursor: pointer; }
+.dialog header button { border: 0; background: #f3f3f7; border-radius: 8px; width: 32px; height: 32px; font-size: 23px; }
+.templateBar, .setupActions, .controls { display: flex; flex-wrap: wrap; align-items: center; gap: 9px; margin: 14px 0; }
+.templateBar button, .setupActions button, .controls button, .dialog footer button, .gridTabs button, .editorColumns aside button { border: 1px solid #dedee8; border-radius: 8px; background: white; padding: 8px 12px; }
+.templateBar select, .dialog aside select { border: 1px solid #dedee8; border-radius: 8px; background: #fff; padding: 8px 12px; }
+.setupColumns { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(260px, .8fr); gap: 22px; }
+.sourceViewport { width: 100%; height: min(56vh, 620px); min-height: 340px; overflow: auto; scrollbar-width: none; border: 1px solid #d8d9e1; border-radius: 12px; background: #24252b; overscroll-behavior: contain; }
+.sourceViewport::-webkit-scrollbar { display: none; }
+.sourcePreview { position: relative; touch-action: none; cursor: grab; }
+.sourcePreview:active { cursor: grabbing; }
+.sourcePreview > img { position: absolute; display: block; object-fit: fill; outline: 1px solid #d3d4dc; background: repeating-conic-gradient(#f0f0f4 0 25%, #fff 0 50%) 0 0 / 18px 18px; pointer-events: none; }
+.imageBoundaryLabel { position: absolute; transform: translateY(calc(-100% - 6px)); color: #c8c9d3; font-size: 11px; pointer-events: none; }
+.verticalGuide, .horizontalGuide { position: absolute; z-index: 5; pointer-events: none; border-color: #f3c364; }
+.verticalGuide { top: 0; bottom: 0; border-left: 1px dashed #f3c364; }
+.horizontalGuide { left: 0; right: 0; border-top: 1px dashed #f3c364; }
+.grid { position: absolute; outline: 2px solid #6d61e9; background: #6d61e91a; cursor: move; touch-action: none; }.activeGrid { box-shadow: 0 0 0 2px #fff; }
+.vertical, .horizontal { position: absolute; background: #fff; box-shadow: 0 0 0 1px #695ee5; }.vertical { top: 0; bottom: 0; width: 2px; transform: translateX(-50%); cursor: ew-resize; }.horizontal { left: 0; right: 0; height: 2px; transform: translateY(-50%); cursor: ns-resize; }
+.corner { position: absolute; right: -7px; bottom: -7px; width: 13px; height: 13px; border: 2px solid #6d61e9; border-radius: 50%; background: #fff; cursor: nwse-resize; }
+.gridTabs { display: flex; flex-wrap: wrap; gap: 6px; }.gridTabs button[aria-pressed=true] { border-color: #7568e9; background: #f0edff; color: #6256df; }
+.gridControls { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.gridControls button { border: 1px solid #dedee8; border-radius: 8px; background: white; padding: 8px 12px; }
+.gridControls button:disabled { opacity: .45; cursor: not-allowed; }
+.fixedToggle { display: flex; align-items: center; flex-wrap: wrap; gap: 7px; margin-top: 16px; color: #303441; font-size: 13px; }
+.fixedToggle span { flex-basis: 100%; padding-left: 21px; color: #777d8b; font-size: 12px; }
+.ratioControl { display: grid; grid-template-columns: 1fr; gap: 9px; margin-top: 10px; }
+.ratioControl label { display: grid; gap: 5px; color: #646a78; font-size: 12px; }
+.ratioControl input, .ratioControl select { width: 100%; min-width: 0; border: 1px solid #dedee8; border-radius: 7px; padding: 8px; background: #fff; }
+.ratioControl input[aria-invalid=true] { border-color: #d64b4b; }
+.ratioControl button { border: 1px solid #dedee8; border-radius: 7px; background: #fff; padding: 8px; }
+.ratioControl button:disabled { opacity: .45; cursor: not-allowed; }
+.ratioControl small { grid-column: 1 / -1; color: #777d8b; }
+.templateOverlay { position: fixed; inset: 0; z-index: 12010; display: grid; place-items: center; padding: 18px; background: #17182399; }
+.templateDialog { width: min(620px, 100%); max-height: calc(100vh - 36px); overflow: auto; padding: 22px; border: 1px solid #e5e4eb; border-radius: 18px; background: #fff; box-shadow: 0 24px 80px #1114; }
+.templateDialog header { display: flex; align-items: flex-start; justify-content: space-between; padding-bottom: 14px; }
+.templateFields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 14px 0; }
+.templateFields > label:first-child { grid-column: 1 / -1; }
+.templateFields label { display: grid; gap: 5px; font-size: 12px; color: #646a78; }
+.templateFields input { width: 100%; min-width: 0; border: 1px solid #dedee8; border-radius: 8px; padding: 9px 10px; }
+.templateFields input:disabled { background: #f5f5f8; }
+.templateCheck { display: flex !important; align-items: center; gap: 8px !important; font-size: 12px; color: #4e5362; }
+.templateCheck input { width: auto; }
+.templateFields .templateCheck { grid-column: 1 / -1; }
+.templateError { color: #c23939 !important; }
+.savedTemplates { max-height: 130px; overflow: auto; margin-top: 16px; padding-top: 12px; border-top: 1px solid #eeeef4; font-size: 12px; }
+.savedTemplates > div { display: flex; align-items: center; justify-content: space-between; padding: 5px 0; }
+.savedTemplates button { border: 0; background: transparent; color: #c23939; }
+.setupActions button:disabled { opacity: .45; cursor: not-allowed; }
+.fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 14px 0; }.fields label { display: grid; gap: 5px; color: #646a78; font-size: 12px; }.fields input { width: 100%; min-width: 0; border: 1px solid #dedee8; border-radius: 7px; padding: 8px; }
+.dialog footer { display: flex; justify-content: flex-end; align-items: center; gap: 10px; position: relative; border-top: 1px solid #eeeef4; padding-top: 16px; margin-top: 20px; }
+.dialog footer .primary { background: #685feb; border-color: #685feb; color: #fff; }.dialog footer .primary:disabled { opacity: .45; cursor: not-allowed; }
+.editorColumns { display: grid; grid-template-columns: 1fr 1fr 210px; gap: 18px; margin-top: 18px; }.editorImage, .editorDrag { display: block; width: 100%; aspect-ratio: 1; object-fit: contain; border: 1px solid #e6e6ee; border-radius: 12px; background: repeating-conic-gradient(#f0f0f4 0 25%, #fff 0 50%) 0 0 / 18px 18px; }.editorDrag { overflow: hidden; touch-action: none; cursor: grab; }.editorDrag img { width: 100%; height: 100%; object-fit: contain; pointer-events: none; }
+.targetList { position: absolute; right: 125px; bottom: 55px; z-index: 2; max-height: 230px; overflow: auto; display: grid; gap: 8px; padding: 12px; border: 1px solid #ddd; border-radius: 10px; background: #fff; box-shadow: 0 10px 25px #2222; font-size: 12px; }.targetList label { display: flex; gap: 6px; white-space: nowrap; }
+.result { width: 640px; max-width: 100%; padding: 12px; }.result header { display: flex; justify-content: space-between; align-items: center; font-size: 12px; }.resultGrid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); align-items: start; gap: 8px; max-height: 330px; overflow: auto; margin-top: 12px; }.resultItem { border: 1px solid #e5e5ee; border-radius: 9px; padding: 6px; background: #fff; }.resultItem img, .previewPending { display: block; width: 100%; aspect-ratio: 1; object-fit: contain; background: repeating-conic-gradient(#eee 0 25%, #fff 0 50%) 0 0 / 12px 12px; }.previewPending { display: grid; place-items: center; color: #8b8e9b; font-size: 10px; }.resultItem footer { display: flex; justify-content: space-between; align-items: center; padding-top: 5px; font-size: 10px; }.resultItem button { border: 0; background: transparent; color: #675ce2; cursor: pointer; }.resultActions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 10px; }.resultActions button { border: 1px solid #dedee8; border-radius: 7px; background: white; padding: 6px 9px; font-size: 11px; cursor: pointer; }
+@media (max-width: 760px) { .setupColumns, .editorColumns { grid-template-columns: 1fr; } }
+.cropTitle { display: flex; align-items: center; gap: 8px; }
+.cropHelp { position: relative; display: inline-flex; flex: none; align-items: center; }
+.dialog header .cropHelpButton { width: 23px; height: 23px; padding: 0; border: 1px solid #b4b7c4; border-radius: 50%; color: #72778b; background: #fff; font-size: 14px; font-weight: 600; line-height: 1; }
+.cropHelpButton:hover, .cropHelpButton:focus-visible { outline: 2px solid #c4beff; outline-offset: 2px; }
+.cropHelpTooltip { position: absolute; left: 0; top: calc(100% + 10px); z-index: 40; display: block; width: min(340px, calc(100vw - 100px)); padding: 14px 16px; border: 1px solid #e3e2ed; border-radius: 12px; background: #fff; box-shadow: 0 8px 28px #16172e22; font-size: 12px; font-weight: 400; text-align: left; }
+.cropHelpTooltip::before { position: absolute; left: 0; right: 0; top: -12px; height: 12px; content: ""; }
+.cropHelpTooltip strong { display: block; color: #373c4c; font-size: 12px; }
+.dialog .cropHelpTooltip p { margin: 6px 0 14px; line-height: 1.7; color: #73798b; }
+.dialog .cropHelpTooltip p:last-child { margin-bottom: 0; }

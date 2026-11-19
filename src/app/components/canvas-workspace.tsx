@@ -1,10 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent } from "react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { MAX_CANVAS_BYTES, validateCanvasDocument } from "@/features/projects/canvas-document";
 import { CanvasSurface, type CanvasInsertType, type CanvasInteractionMode, type CanvasSurfaceHandle } from "@/features/canvas/canvas-surface";
 import { AssetPanel } from "@/features/assets/asset-panel";
 import { ImageDownloadModal } from "@/features/assets/image-download-modal";
+import { VideoDownloadModal } from "@/features/video-downloads/video-download-modal";
 import { ChatPanel } from "@/features/ai/chat-panel";
 import type { CanvasDocumentState } from "@/features/projects/types";
 import { Icon, type IconName } from "./app-icon";
@@ -33,7 +35,7 @@ const toolGroups: Array<{
   {
     label: "处理",
     items: [
-      { icon: "layers", label: "动图拆帧", color: "#6c63dc", soft: "#eeebff" },
+      { icon: "layers", label: "动图处理", color: "#6c63dc", soft: "#eeebff" },
       { icon: "crop", label: "裁切", color: "#b26b24", soft: "#fff0df", expandable: true },
       { icon: "filter", label: "筛选", color: "#2a9974", soft: "#e3f6ef", expandable: true },
     ],
@@ -51,13 +53,33 @@ export function CanvasWorkspace({ initialDocument, projectId, title }: CanvasWor
   const [rightCollapsed, setRightCollapsed] = useState(false);
   const [leftView, setLeftView] = useState<"tools" | "assets">("tools");
   const [downloadOpen, setDownloadOpen] = useState(false);
+  const [videoDownloadOpen, setVideoDownloadOpen] = useState(false);
   const [leftWidth, setLeftWidth] = useState(218);
   const [rightWidth, setRightWidth] = useState(284);
   const [rightExpanded, setRightExpanded] = useState(false);
   const [resizingSide, setResizingSide] = useState<ResizeSide | null>(null);
   const [canvasAssetIds, setCanvasAssetIds] = useState<ReadonlySet<string>>(() => new Set());
   const [assetRefreshKey, setAssetRefreshKey] = useState(0);
-  const [interactionMode, setInteractionMode] = useState<CanvasInteractionMode>("pan");
+  const [baseMode, setInteractionMode] = useState<CanvasInteractionMode>("pan");
+  const [ctrlHeld, setCtrlHeld] = useState(false);
+  const interactionMode = ctrlHeld ? (baseMode === "pan" ? "select" : "pan") : baseMode;
+
+  useEffect(() => {
+    const press = (event: globalThis.KeyboardEvent) => {
+      if (event.key !== "Control" || (event.target instanceof HTMLElement && event.target.closest("input, textarea, select, [contenteditable]"))) return;
+      setCtrlHeld(true);
+    };
+    const reset = () => setCtrlHeld(false);
+    const release = (event: globalThis.KeyboardEvent) => { if (!event.ctrlKey) reset(); };
+    window.addEventListener("keydown", press);
+    window.addEventListener("keyup", release);
+    window.addEventListener("blur", reset);
+    return () => {
+      window.removeEventListener("keydown", press);
+      window.removeEventListener("keyup", release);
+      window.removeEventListener("blur", reset);
+    };
+  }, []);
   const [historyState, setHistoryState] = useState({ canRedo: false, canUndo: false });
   const canvasRef = useRef<CanvasSurfaceHandle>(null);
   const resizeRef = useRef<{
@@ -69,61 +91,128 @@ export function CanvasWorkspace({ initialDocument, projectId, title }: CanvasWor
     previousUserSelect: string;
   } | null>(null);
   const documentRef = useRef<CanvasDocumentState | null>(initialDocument);
-  const lastSavedDocumentRef = useRef(initialDocument ? JSON.stringify(initialDocument) : "");
+  const confirmed = useRef<string | null>(JSON.stringify(initialDocument));
+  const inFlight = useRef<Promise<boolean> | null>(null);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [saveStatus, setSaveStatus] = useState<"saved" | "dirty" | "saving" | "failed">("saved");
+  const [draftWarning, setDraftWarning] = useState(false);
+  const [invalidDraft, setInvalidDraft] = useState(false);
+  const preserveDraft = useRef(false);
+  const [leaving, setLeaving] = useState(false);
+  const [leaveFailed, setLeaveFailed] = useState(false);
+  const [recovery, setRecovery] = useState<CanvasDocumentState | null>(null);
+  const [draftChecked, setDraftChecked] = useState(false);
+  const [restored, setRestored] = useState<CanvasDocumentState | null>(null);
+  const pauseAutosave = useRef(false);
+  const draftKey = `mowo:canvas-draft:${projectId}`;
+  const router = useRouter();
 
-  const persistDocument = useCallback(async (document = documentRef.current) => {
-    if (!document) return;
-    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
-    saveTimerRef.current = null;
-    const serialized = JSON.stringify(document);
-    if (serialized === lastSavedDocumentRef.current) {
-      setSaveStatus("saved");
-      return;
-    }
-    setSaveStatus("saving");
+  const syncDraft = useCallback((pending: boolean) => {
+    if (preserveDraft.current) return;
     try {
-      const response = await fetch(`/api/projects/${encodeURIComponent(projectId)}/canvas`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: serialized,
-      });
-      if (!response.ok) throw new Error("保存失败");
-      lastSavedDocumentRef.current = serialized;
-      setSaveStatus("saved");
+      if (pending) localStorage.setItem(draftKey, JSON.stringify(documentRef.current));
+      else localStorage.removeItem(draftKey);
+      setDraftWarning(false);
     } catch {
-      setSaveStatus("failed");
+      setDraftWarning(true);
     }
-  }, [projectId]);
-
-  const handleDocumentChange = useCallback((document: CanvasDocumentState) => {
-    documentRef.current = document;
-    const serialized = JSON.stringify(document);
-    if (serialized === lastSavedDocumentRef.current) return;
-    setSaveStatus("dirty");
-    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
-    saveTimerRef.current = setTimeout(() => void persistDocument(document), 700);
-  }, [persistDocument]);
+  }, [draftKey]);
 
   useEffect(() => {
-    const saveBeforeLeaving = () => {
-      const document = documentRef.current;
-      if (!document || JSON.stringify(document) === lastSavedDocumentRef.current) return;
-      void fetch(`/api/projects/${encodeURIComponent(projectId)}/canvas`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(document),
-        keepalive: true,
-      });
-    };
-    window.addEventListener("pagehide", saveBeforeLeaving);
+    const timer = setTimeout(() => {
+      try {
+        const stored = localStorage.getItem(draftKey);
+        if (!stored) return;
+        let draft: unknown;
+        try {
+          if (new TextEncoder().encode(stored).byteLength > MAX_CANVAS_BYTES) throw new Error("草稿过大");
+          draft = JSON.parse(stored);
+          validateCanvasDocument(draft);
+        } catch {
+          setInvalidDraft(true);
+          preserveDraft.current = true;
+          const backupKey = draftKey + ":invalid";
+          if (localStorage.getItem(backupKey) === null) {
+            localStorage.setItem(backupKey, stored);
+            localStorage.removeItem(draftKey);
+            preserveDraft.current = false;
+          } else {
+            setDraftWarning(true);
+          }
+          return;
+        }
+        if (JSON.stringify(draft) !== confirmed.current) {
+          pauseAutosave.current = true;
+          setRecovery(draft);
+        } else {
+          localStorage.removeItem(draftKey);
+        }
+      } catch {
+        setDraftWarning(true);
+      } finally {
+        setDraftChecked(true);
+      }
+    }, 0);
     return () => {
-      window.removeEventListener("pagehide", saveBeforeLeaving);
-      saveBeforeLeaving();
+      clearTimeout(timer);
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     };
-  }, [projectId]);
+  }, [draftKey]);
+
+  const persistDocument = useCallback((): Promise<boolean> => {
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = null;
+    if (inFlight.current) return inFlight.current;
+    const run = async () => {
+      while (documentRef.current) {
+        const snapshot = JSON.stringify(documentRef.current);
+        if (snapshot === confirmed.current) break;
+        setSaveStatus("saving");
+        const response = await fetch(`/api/projects/${encodeURIComponent(projectId)}/canvas`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: snapshot,
+        });
+        if (!response.ok) throw new Error("保存失败");
+        confirmed.current = snapshot;
+      }
+      syncDraft(false);
+      setSaveStatus("saved");
+      return true;
+    };
+    const pending = run().catch(() => {
+      // A failed response does not tell us whether the write reached SQLite.
+      confirmed.current = null;
+      syncDraft(true);
+      setSaveStatus("failed");
+      return false;
+    }).finally(() => { inFlight.current = null; });
+    inFlight.current = pending;
+    return pending;
+  }, [projectId, syncDraft]);
+
+  const handleDocumentChange = useCallback((document: CanvasDocumentState) => {
+    const serialized = JSON.stringify(document);
+    if (serialized === JSON.stringify(documentRef.current)) return;
+    documentRef.current = document;
+    const dirty = serialized !== confirmed.current;
+    syncDraft(dirty || Boolean(inFlight.current));
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    if (inFlight.current) return;
+    setSaveStatus(dirty ? "dirty" : "saved");
+    if (dirty && !pauseAutosave.current) saveTimerRef.current = setTimeout(() => void persistDocument(), 700);
+  }, [persistDocument, syncDraft]);
+
+  const returnHome = async () => {
+    if (leaving) return;
+    setLeaving(true);
+    setLeaveFailed(false);
+    if (await persistDocument()) router.push("/");
+    else {
+      setLeaving(false);
+      setLeaveFailed(true);
+    }
+  };
 
   const clampPanelWidth = useCallback((side: ResizeSide, width: number) => {
     const limits = panelLimits[side];
@@ -196,9 +285,9 @@ export function CanvasWorkspace({ initialDocument, projectId, title }: CanvasWor
   return (
     <main className={styles.editorShell}>
       <header className={styles.editorTopbar}>
-        <Link className={styles.iconButton} href="/" aria-label="返回首页">
+        <button className={styles.iconButton} disabled={leaving || !draftChecked} onClick={() => void returnHome()} aria-label="返回首页" type="button">
           <Icon name="arrow-left" />
-        </Link>
+        </button>
         <div className={styles.topbarBrand}>
           <span className={`${styles.brandMark} ${styles.miniBrandMark}`} aria-hidden="true"><span /><span /><span /></span>
           <span>MOWO Canvas</span>
@@ -211,7 +300,9 @@ export function CanvasWorkspace({ initialDocument, projectId, title }: CanvasWor
         <button className={styles.iconButton} aria-label="重做" disabled={!historyState.canRedo} onClick={() => canvasRef.current?.redo()} type="button"><Icon name="redo" /></button>
         <span className={styles.topbarDivider} />
         <span className={styles.saveState}><span className={`${styles.saveDot} ${saveStatus === "failed" ? styles.saveDotFailed : saveStatus !== "saved" ? styles.saveDotPending : ""}`} />{saveStatus === "saved" ? "已保存" : saveStatus === "saving" ? "保存中…" : saveStatus === "failed" ? "保存失败" : "未保存"}</span>
-        <button className={styles.topbarPrimary} disabled={saveStatus === "saving"} onClick={() => void persistDocument()} type="button"><Icon name="save" />保存</button>
+        <button className={styles.topbarPrimary} disabled={leaving || !draftChecked} onClick={() => { pauseAutosave.current = false; void persistDocument(); }} type="button"><Icon name="save" />保存</button>
+        {invalidDraft ? <small role="status">旧草稿无法恢复，原始草稿已保留</small> : null}
+        {draftWarning ? <small role="status">浏览器草稿不可用</small> : null}
         <button className={styles.topbarAction} type="button"><Icon name="upload" />导出</button>
       </header>
 
@@ -225,7 +316,7 @@ export function CanvasWorkspace({ initialDocument, projectId, title }: CanvasWor
               </div>
               <button aria-label="折叠左侧工具栏" onClick={() => setLeftCollapsed(true)} type="button"><Icon name="chevron-left" /></button>
             </div>
-            {leftView === "assets" ? <AssetPanel canvasAssetIds={canvasAssetIds} onLocateAsset={(assetId) => canvasRef.current?.focusAsset(assetId)} projectId={projectId} refreshKey={assetRefreshKey} /> : (
+            {leftView === "assets" ? <AssetPanel canvasAssetIds={canvasAssetIds} onLocateAsset={(assetId) => canvasRef.current?.focusAsset(assetId)} onLocateSequence={(sequence) => canvasRef.current?.focusSequence(sequence)} onPlaceAsset={(asset) => canvasRef.current?.placeAsset(asset)} projectId={projectId} refreshKey={assetRefreshKey} /> : (
               <div className={styles.toolPanelContent}>
                 <label className={styles.toolSearch}>
                   <Icon name="search" />
@@ -243,11 +334,24 @@ export function CanvasWorkspace({ initialDocument, projectId, title }: CanvasWor
                           </button>
                           <div className={styles.downloadSubmenu}>
                             <button onClick={() => setDownloadOpen(true)} type="button"><Icon name="image" /><span>下载图片<small>链接导入与素材预览</small></span></button>
-                            <button disabled type="button"><Icon name="video" /><span>下载视频<small>后续版本开放</small></span></button>
+                            <button onClick={() => setVideoDownloadOpen(true)} type="button"><Icon name="video" /><span>下载视频<small>B 站链接与下载记录</small></span></button>
+                          </div>
+                        </div>
+                      ) : item.label === "动图处理" ? (
+                        <div className={styles.downloadTool} key={item.label}>
+                          <button className={styles.toolItem} type="button">
+                            <span className={styles.toolIcon} style={{ "--tool-color": item.color, "--tool-soft": item.soft } as CSSProperties}><Icon name={item.icon} /></span>
+                            <span>{item.label}</span><Icon name="chevron-right" />
+                          </button>
+                          <div className={styles.downloadSubmenu}>
+                            <button type="button" onClick={() => canvasRef.current?.addNode("frame-extraction")}><Icon name="layers" /><span>动图拆帧<small>将动图拆为有序帧序列</small></span></button>
+                            <button type="button" onClick={() => canvasRef.current?.addNode("video-frame-extraction")}><Icon name="video" /><span>视频拆帧<small>还原节奏、间隔抽帧与有序帧组</small></span></button>
+                            <button type="button" onClick={() => canvasRef.current?.addNode("frame-stitch")}><Icon name="grid" /><span>动画帧拼接<small>把循环帧排成可裁回的网格图</small></span></button>
+                            <button type="button" onClick={() => canvasRef.current?.addNode("frame-result")}><Icon name="grid" /><span>动画帧编辑<small>预览、排序和保存帧序列</small></span></button>
                           </div>
                         </div>
                       ) : (
-                        <button className={styles.toolItem} key={item.label} onClick={() => item.label === "动图拆帧" && canvasRef.current?.addNode("frame-extraction")} type="button">
+                        <button className={styles.toolItem} key={item.label} type="button">
                           <span className={styles.toolIcon} style={{ "--tool-color": item.color, "--tool-soft": item.soft } as CSSProperties}><Icon name={item.icon} /></span>
                           <span>{item.label}</span>{item.expandable ? <Icon name="chevron-right" /> : null}
                         </button>
@@ -279,8 +383,9 @@ export function CanvasWorkspace({ initialDocument, projectId, title }: CanvasWor
           <button className={`${styles.expandPanelButton} ${styles.expandLeft}`} aria-label="展开左侧工具栏" onClick={() => setLeftCollapsed(false)} type="button"><Icon name="chevron-right" /></button>
           <button className={`${styles.expandPanelButton} ${styles.expandRight}`} aria-label="展开右侧对话栏" onClick={() => setRightCollapsed(false)} type="button"><Icon name="chevron-left" /></button>
           <div className={styles.canvasHint}><span>交互画布</span> · 拖动、缩放与连线</div>
-          <CanvasSurface
-            initialDocument={initialDocument}
+          {draftChecked && !recovery ? <CanvasSurface
+            key={restored ? "restored" : "saved"}
+            initialDocument={restored ?? initialDocument}
             interactionMode={interactionMode}
             onAssetIdsChange={handleCanvasAssetIdsChange}
             onAssetImported={() => setAssetRefreshKey((key) => key + 1)}
@@ -288,7 +393,7 @@ export function CanvasWorkspace({ initialDocument, projectId, title }: CanvasWor
             onHistoryChange={setHistoryState}
             projectId={projectId}
             ref={canvasRef}
-          />
+          /> : null}
 
           <nav className={styles.bottomToolbar} aria-label="常用工具">
             <button
@@ -335,7 +440,38 @@ export function CanvasWorkspace({ initialDocument, projectId, title }: CanvasWor
           <ChatPanel key={projectId} projectId={projectId} onCollapse={() => setRightCollapsed(true)} expanded={rightExpanded} onExpand={() => setRightExpanded((value) => !value)} />
         </aside>
       </div>
+      {leaveFailed || recovery ? (
+        <dialog className={styles.saveDialog} ref={(element) => { if (element && !element.open) element.showModal(); }} onCancel={(event) => event.preventDefault()}>
+          {recovery ? <>
+            <h2>发现未确认的画布草稿</h2>
+            <p>比较两个版本后，选择载入草稿或保留已保存版本。载入后点击「保存」可提交。</p>
+            <div className={styles.saveComparison}>
+              {[["已保存版本", initialDocument], ["浏览器草稿", recovery]].map(([label, value]) => {
+                const document = value as CanvasDocumentState | null;
+                return <section key={String(label)}>
+                  <h3>{String(label)}</h3>
+                  <p>{document?.nodes.length ?? 0} 个节点 · {document?.edges.length ?? 0} 条连线</p>
+                  <textarea aria-label={String(label)} readOnly value={JSON.stringify(document, null, 2)} />
+                </section>;
+              })}
+            </div>
+            <footer>
+              <button type="button" onClick={() => { syncDraft(false); pauseAutosave.current = false; setRecovery(null); }}>保留已保存版本</button>
+              <button type="button" onClick={() => { setRestored(recovery); setRecovery(null); }}>载入草稿</button>
+            </footer>
+          </> : <>
+            <h2>保存失败，画布仍在编辑器中</h2>
+            <p>可以重试保存，或明确选择离开。{draftWarning ? "浏览器草稿写入失败。" : "最新内容已保留为浏览器草稿。"}</p>
+            <footer>
+              <button type="button" onClick={() => setLeaveFailed(false)}>继续编辑</button>
+              <button type="button" onClick={() => void returnHome()}>重试保存</button>
+              <button type="button" onClick={() => router.push("/")}>不提交，返回首页</button>
+            </footer>
+          </>}
+        </dialog>
+      ) : null}
       {downloadOpen ? <ImageDownloadModal projectId={projectId} onClose={() => setDownloadOpen(false)} onImported={() => { setDownloadOpen(false); setLeftView("assets"); }} /> : null}
+      {videoDownloadOpen ? <VideoDownloadModal key={projectId} projectId={projectId} onClose={() => setVideoDownloadOpen(false)} onImported={() => { setLeftView("assets"); setAssetRefreshKey(key => key + 1); }} /> : null}
     </main>
   );
 }

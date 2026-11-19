@@ -9,6 +9,8 @@ Use the project root as the working directory. Start every task by reading `../.
 
 ## Task routing
 
+For feature planning, architecture design, or scope changes, read and follow the "功能完整性与复杂度控制" section in `../../../AGENTS.md` before proposing the implementation plan. Keep the rules there as the single source of truth.
+
 | Task | Read after project status |
 |---|---|
 | Product goals or feature scope | `../../../docs/01-project-overview.md`, `../../../docs/02-product-scope.md` |

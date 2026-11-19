@@ -1,14 +1,17 @@
 import "server-only";
 
 import { createHash, randomUUID } from "node:crypto";
-import { mkdir, rename, rm, writeFile } from "node:fs/promises";
+import { access, mkdir, open, rename, rm, writeFile } from "node:fs/promises";
+import sharp from "sharp";
+import { apngFrameCount } from "../downloaders/server/apng";
 import { basename, dirname, extname, join, relative } from "node:path";
-import { and, desc, eq, inArray, isNull } from "drizzle-orm";
-import type { AssetProjectSummary, AssetSummary } from "../types";
-import { ensureKnownProjects, listProjects } from "@/features/projects/server/project-service";
+import { and, asc, desc, eq, inArray, isNull } from "drizzle-orm";
+import type { AssetProjectSummary, AssetSequence, AssetSummary } from "../types";
+import { listProjects } from "@/features/projects/server/project-service";
 import { ensureAssetDataPaths, getAssetDataPaths, resolveStoredAssetPath } from "./data-paths";
 import { getAssetDatabase } from "./database";
-import { assetCollectionItems, assetCollections, assets, projectAssets } from "./schema";
+import { assetCollectionItems, assetCollections, assetIntakes, assets, projectAssets, videoClips } from "./schema";
+import { assetCache } from "@/features/video-downloads/server/import-video";
 
 const MAX_IMAGE_BYTES = 50 * 1024 * 1024;
 const MAX_IMPORT_FILES = 500;
@@ -35,13 +38,32 @@ function toSummary(row: {
     height: asset.height,
     duration: asset.duration,
     sourceType: asset.sourceType,
-    previewUrl: asset.type === "text" ? null : `/api/assets/${asset.id}/content`,
+    previewUrl: asset.type === "text" ? null : `/api/assets/${asset.id}/${asset.type === "video" && asset.videoMetadataJson ? "preview" : "content"}`,
+    originalUrl: asset.type === "video" ? `/api/assets/${asset.id}/content` : null,
     addedAt: row.addedAt.toISOString(),
   };
 }
 
-export async function listProjectAssets(projectId: string) {
-  await ensureKnownProjects();
+async function hasAnimation(asset: typeof assets.$inferSelect) {
+  if (asset.type !== "image" || !asset.relativePath || asset.sourceType === "frame-extraction") return false;
+  try {
+    const path = resolveStoredAssetPath(asset.relativePath);
+    if (asset.mimeType === "image/png" || asset.mimeType === "image/apng") {
+      const file = await open(path, "r");
+      try {
+        const header = Buffer.alloc(64 * 1024);
+        const { bytesRead } = await file.read(header);
+        return apngFrameCount(header.subarray(0, bytesRead)) > 1;
+      } finally { await file.close(); }
+    }
+    if (asset.mimeType === "image/gif" || asset.mimeType === "image/webp") {
+      return ((await sharp(path, { animated: true }).metadata()).pages ?? 1) > 1;
+    }
+  } catch { /* An unreadable asset can still be listed. */ }
+  return false;
+}
+
+export async function listProjectAssets(projectId: string, includeAnimation = false) {
   const database = await getAssetDatabase();
   const rows = database.select({ asset: assets, addedAt: projectAssets.addedAt })
     .from(projectAssets)
@@ -50,7 +72,38 @@ export async function listProjectAssets(projectId: string) {
     .orderBy(desc(projectAssets.addedAt))
     .all();
 
-  return rows.map(toSummary);
+  const summaries = rows.map(toSummary);
+  const clips = database.select().from(videoClips).where(eq(videoClips.projectId, projectId)).all();
+  const clipById = new Map(clips.map((clip) => [clip.id, clip]));
+  const sourceById = new Map(rows.map((row) => [row.asset.id, row.asset]));
+  for (let index = 0; index < rows.length; index++) {
+    const clip = clipById.get(rows[index].asset.id);
+    if (!clip) continue;
+    const source = sourceById.get(clip.sourceAssetId);
+    const startSeconds = clip.startPts * clip.timeBaseNumerator / clip.timeBaseDenominator;
+    const endSeconds = clip.endPts * clip.timeBaseNumerator / clip.timeBaseDenominator;
+    summaries[index].clip = { sourceAssetId: clip.sourceAssetId, startFrame: clip.startFrame,
+      endFrame: clip.endFrame, startSeconds, endSeconds, sequence: clip.sequence };
+    summaries[index].duration = endSeconds - startSeconds;
+    if (!source || source.deletedAt) { summaries[index].previewUrl = null; summaries[index].originalUrl = null; continue; }
+    summaries[index].previewUrl = `/api/assets/${source.id}/${source.videoMetadataJson ? "preview" : "content"}`;
+    summaries[index].originalUrl = `/api/assets/${source.id}/content`;
+    if (source.contentHash && await access(join(assetCache(getAssetDataPaths().root, source.contentHash), "cover.jpg")).then(() => true, () => false))
+      summaries[index].coverUrl = `/api/assets/${source.id}/cover`;
+  }
+  await Promise.all(rows.map(async ({ asset }, index) => {
+    if (asset.type === "video" && asset.contentHash && await access(join(assetCache(getAssetDataPaths().root, asset.contentHash), "cover.jpg")).then(() => true, () => false)) {
+      summaries[index].coverUrl = `/api/assets/${asset.id}/cover`;
+    }
+  }));
+  if (includeAnimation) {
+    for (let index = 0; index < rows.length; index += 8) {
+      await Promise.all(rows.slice(index, index + 8).map(async (row, offset) => {
+        summaries[index + offset].animated = await hasAnimation(row.asset);
+      }));
+    }
+  }
+  return summaries;
 }
 
 export async function listAssetProjects(excludeProjectId?: string): Promise<AssetProjectSummary[]> {
@@ -58,7 +111,6 @@ export async function listAssetProjects(excludeProjectId?: string): Promise<Asse
 }
 
 export async function referenceAssets(projectId: string, assetIds: string[]) {
-  await ensureKnownProjects();
   if (assetIds.length === 0) return listProjectAssets(projectId);
 
   const database = await getAssetDatabase();
@@ -83,13 +135,13 @@ export type ImageBufferImport = {
 };
 
 export async function importImageBuffers(projectId: string, sources: ImageBufferImport[], collection?: { name: string; sourceType: string; sourceUrl?: string }) {
-  await ensureKnownProjects();
   if (sources.length === 0) throw new Error("请选择图片文件");
   if (sources.length > MAX_IMPORT_FILES) throw new Error(`单次最多导入 ${MAX_IMPORT_FILES} 张图片`);
 
   const paths = await ensureAssetDataPaths();
   const database = await getAssetDatabase();
   const importedIds: string[] = [];
+  const intakeIds: string[] = [];
 
   for (const source of sources) {
     const extension = supportedImages[source.mimeType];
@@ -130,6 +182,10 @@ export async function importImageBuffers(projectId: string, sources: ImageBuffer
 
     database.insert(projectAssets).values({ projectId, assetId, addedAt: new Date() })
       .onConflictDoNothing().run();
+    const intakeId = randomUUID();
+    database.insert(assetIntakes).values({ id: intakeId, projectId, assetId, sourceType: source.sourceType,
+      sourceName: source.name, sourceUrl: source.sourceUrl, createdAt: new Date() }).run();
+    intakeIds.push(intakeId);
     importedIds.push(assetId);
   }
 
@@ -137,6 +193,7 @@ export async function importImageBuffers(projectId: string, sources: ImageBuffer
     const collectionId = randomUUID();
     database.insert(assetCollections).values({
       id: collectionId,
+      projectId,
       name: collection.name,
       sourceType: collection.sourceType,
       sourceUrl: collection.sourceUrl,
@@ -144,6 +201,7 @@ export async function importImageBuffers(projectId: string, sources: ImageBuffer
     }).run();
     database.insert(assetCollectionItems).values(importedIds.map((assetId, position) => ({ id: randomUUID(), collectionId, assetId, position })))
       .onConflictDoNothing().run();
+    for (const intakeId of intakeIds) database.update(assetIntakes).set({ batchId: collectionId }).where(eq(assetIntakes.id, intakeId)).run();
   }
 
   return {
@@ -182,4 +240,22 @@ export async function getAssetContent(assetId: string) {
 
 export function getDataRootForDiagnostics() {
   return getAssetDataPaths().root;
+}
+export async function listProjectSequences(projectId: string, projectAssetList: AssetSummary[]): Promise<AssetSequence[]> {
+  const database = await getAssetDatabase();
+  const rows = database.select({
+    id: assetCollections.id, name: assetCollections.name, assetId: assetCollectionItems.assetId, durationMs: assetCollectionItems.durationMs,
+  }).from(assetCollections).innerJoin(assetCollectionItems, eq(assetCollections.id, assetCollectionItems.collectionId))
+    .where(and(eq(assetCollections.projectId, projectId), eq(assetCollections.kind, "frame-sequence")))
+    .orderBy(desc(assetCollections.createdAt), asc(assetCollectionItems.position)).all();
+  const assetsById = new Map(projectAssetList.map((asset) => [asset.id, asset]));
+  const sequences = new Map<string, AssetSequence>();
+  for (const row of rows) {
+    const asset = assetsById.get(row.assetId);
+    if (!asset) continue;
+    const sequence = sequences.get(row.id) ?? { id: row.id, name: row.name, frames: [] };
+    sequence.frames.push({ ...asset, durationMs: row.durationMs ?? 100 });
+    sequences.set(row.id, sequence);
+  }
+  return [...sequences.values()];
 }

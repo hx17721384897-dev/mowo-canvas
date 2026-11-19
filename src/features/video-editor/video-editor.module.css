@@ -1,0 +1,119 @@
+.workspace { height: 100dvh; min-height: 480px; min-width: 760px; overflow: hidden; display: flex; flex-direction: column; background: #17191e; color: #e9ebf0; }
+.header { height: 56px; flex-shrink: 0; padding: 0 20px; display: flex; align-items: center; gap: 24px; border-bottom: 1px solid #333943; }
+.header a { color: #c9d9ff; text-decoration: none; }
+.header strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.historyButton { flex: 0 0 auto; border: 1px solid #596b84; border-radius: 5px; padding: 5px 9px; color: #e9ebf0; background: #303e52; cursor: pointer; }
+.historyButton:disabled { opacity: .45; cursor: not-allowed; }
+.projectStatus { color: #b8c6d8; font-size: 12px; white-space: nowrap; }
+.badge { margin-left: auto; color: #a8b2c2; font-size: 12px; }
+.body { flex: 1; min-height: 0; display: grid; grid-template-columns: var(--left-panel, 220px) 6px minmax(280px, 1fr) 6px var(--right-panel, 260px); overflow: hidden; }
+.left, .right { min-width: 0; overflow: auto; overflow-wrap: anywhere; padding: 18px; background: #202329; }
+.left { border-right: 1px solid #333943; }
+.right { border-left: 1px solid #333943; display: flex; flex-direction: column; align-items: stretch; gap: 14px; }
+.left h2, .right h2 { font-size: 15px; margin: 0 0 10px; }
+.left p, .right p { color: #a9b1bd; font-size: 13px; line-height: 1.5; }
+.shotPanel { padding-bottom: 16px; margin-bottom: 16px; border-bottom: 1px solid #3c4553; }
+.shotStart, .shotCancel, .shotItem { width: 100%; border: 1px solid #667894; border-radius: 6px; color: inherit; background: #35465e; padding: 8px 10px; cursor: pointer; text-align: left; }
+.shotStart { text-align: center; background: #3663aa; font-weight: 600; }
+.shotCancel { background: #313946; }
+.shotStart:disabled, .shotCancel:disabled, .shotItem:disabled { opacity: .55; cursor: not-allowed; }
+.shotEditControls { display: grid; gap: 6px; margin-top: 10px; }
+.shotEditControls button { border: 1px solid #667894; border-radius: 6px; color: inherit; background: #35465e; padding: 7px 10px; cursor: pointer; }
+.shotEditControls button[aria-pressed="true"] { border-color: #69c7d5; background: #25435a; }
+.shotEditControls button:disabled { opacity: .5; cursor: not-allowed; }
+.shotEditControls small { color: #b8c6d8; line-height: 1.4; }
+.shotList { max-height: min(42vh, 420px); overflow-y: auto; display: grid; gap: 6px; margin-top: 10px; }
+.shotItem small { display: block; color: #b8c6d8; margin-top: 3px; }
+.shotItem { display: flex; gap: 9px; align-items: center; }
+.shotThumb { width: 76px; height: 48px; flex: 0 0 auto; object-fit: contain; background: #111722; border-radius: 3px; }
+.shotItem[aria-current="true"] { border-color: #69c7d5; background: #25435a; }
+.center { display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow: hidden; }
+.stage { flex: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; background: #08090b; position: relative; }
+.pictureViewport { flex: 1; min-height: 0; position: relative; overflow: hidden; display: grid; place-items: center; }
+.playerControls { position: absolute; z-index: 10; bottom: 10px; left: 10px; right: 10px; opacity: 0; visibility: hidden; pointer-events: none; transition: opacity .18s, visibility .18s; border-radius: 9px; box-shadow: 0 4px 18px #0005; display: flex; align-items: center; flex-wrap: wrap; gap: 10px; min-height: 46px; padding: 8px 12px; background: #16191fe8; border: 1px solid #ffffff1c; }
+.playerControls > input { flex: 1; min-width: 80px; accent-color: #8daff3; }
+.playerControls button, .playerControls select { display: inline-flex; align-items: center; justify-content: center; border: 1px solid #455065; border-radius: 5px; background: #252c38; color: #e9ebf0; padding: 5px 8px; cursor: pointer; }
+.playerControls button:disabled { opacity: .5; cursor: not-allowed; }
+.playerControls svg { width: 16px; height: 16px; }
+.playerControls small { font-size: 11px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.stage:fullscreen { width: 100%; height: 100%; }
+.stage video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
+.mediaLoading { position: absolute; inset: 0; display: grid; place-items: center; padding: 20px; pointer-events: none; }
+.exactFrame { position: absolute; width: 100%; height: 100%; object-fit: contain; pointer-events: none; }
+.previewProblem { max-width: 460px; text-align: center; padding: 24px; color: #d4dbe6; }
+.previewProblem button { border: 1px solid #6984ad; border-radius: 6px; color: inherit; background: #34445c; padding: 7px 12px; cursor: pointer; }
+.transport { flex-shrink: 0; flex-wrap: wrap; display: flex; align-items: center; gap: 16px; min-height: 54px; padding: 8px 16px; border-top: 1px solid #333943; }
+.transport label, .timelineHeader label { display: flex; align-items: center; gap: 6px; font-size: 12px; }
+.transport button, .right button { border: 1px solid #596377; border-radius: 6px; padding: 7px 10px; color: inherit; background: #313946; cursor: pointer; }
+.right button:disabled { opacity: .55; cursor: not-allowed; }
+.savedClip { display: block; width: 100%; text-align: left; margin: 8px 0; padding: 8px; border: 1px solid #4a5364; border-radius: 6px; background: #2d3542; color: inherit; cursor: pointer; }
+.savedClip small { display: block; margin-top: 4px; color: #a9b1bd; }
+.timeline { height: var(--timeline-height, 360px); flex-shrink: 0; overflow: auto; padding: 10px 14px; border-top: 1px solid #333943; background: #202329; }
+.cuttingStrip { margin-top: 8px; padding-top: 8px; border-top: 1px solid #455064; min-width: 0; }
+.cuttingHeader { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; color: #cbd6e7; font-size: 12px; }
+.cuttingHeader span { color: #9eacc0; }
+.cuttingHeader button { border: 1px solid #596b84; border-radius: 4px; padding: 3px 7px; color: inherit; background: #303e52; cursor: pointer; }
+.cuttingHeader button:disabled { opacity: .5; cursor: not-allowed; }
+.cuttingExport { border: 1px solid #596b84; border-radius: 4px; padding: 3px 7px; color: #e7f3ff; background: #303e52; text-decoration: none; }
+.cuttingTools { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 8px; color: #cbd6e7; font-size: 12px; font-variant-numeric: tabular-nums; }
+.cuttingZoom { display: flex; align-items: center; gap: 5px; }
+.cuttingZoom button { border: 1px solid #596b84; border-radius: 4px; padding: 2px 7px; color: inherit; background: #303e52; cursor: pointer; }
+.cuttingZoom button:disabled { opacity: .5; cursor: not-allowed; }
+.cuttingZoom small { color: #9eacc0; }
+.cuttingViewport { width: 100%; overflow-x: auto; overflow-y: hidden; margin-top: 6px; scrollbar-color: #7087a4 #202936; }
+.cuttingTrack { position: relative; height: 148px; user-select: none; }
+.cuttingRuler { position: relative; display: block; width: 100%; height: 26px; padding: 0; border: 0; background: #1a2029; color: #aebbd0; text-align: left; cursor: crosshair; touch-action: none; }
+.cuttingTick { position: absolute; top: 5px; height: 20px; padding-left: 4px; border-left: 1px solid #68758b; white-space: nowrap; font-size: 11px; pointer-events: none; }
+.cuttingClips { position: relative; width: 100%; height: 94px; background: repeating-linear-gradient(90deg, #202b39 0, #202b39 1px, #18212c 1px, #18212c 96px); }
+.cuttingClip { position: absolute; top: 7px; height: 80px; min-width: 0; overflow: visible; border: 1px solid #5a9cb6; border-radius: 4px; background: #1e3f57; color: #eef9fd; }
+.cuttingClip:has(.cuttingClipBody[aria-pressed="true"]) { outline: 2px solid #d6f4ff; outline-offset: 1px; z-index: 2; }
+.cuttingClipMoving { border-style: dashed; background: #28617b; z-index: 3; }
+.cuttingClipBody { position: absolute; inset: 0; display: block; width: 100%; overflow: hidden; padding: 0; border: 0; border-radius: 3px; background: transparent; color: inherit; text-align: left; cursor: grab; touch-action: none; }
+.cuttingClipBody:active { cursor: grabbing; }
+.cuttingClipTitle { position: absolute; z-index: 1; top: 0; left: 0; right: 0; overflow: hidden; height: 25px; padding: 2px 7px; background: #1c536ae8; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; }
+.cuttingClipTitle small { margin-left: 8px; color: #d4e6f2; white-space: nowrap; }
+.cuttingFrames { position: absolute; inset: 25px 0 0; display: flex; overflow: hidden; background: #111820; }
+.cuttingFrames img { flex: 1 1 0; min-width: 0; height: 100%; object-fit: cover; }
+.cuttingEdge { position: absolute; z-index: 4; top: 0; bottom: 0; width: 8px; padding: 0; border: 0; background: #b6e6f155; cursor: ew-resize; touch-action: none; opacity: .7; }
+.cuttingEdgeStart { left: 0; border-radius: 3px 0 0 3px; }
+.cuttingEdgeEnd { right: 0; border-radius: 0 3px 3px 0; }
+.cuttingClip:hover .cuttingEdge, .cuttingClip:has(.cuttingClipBody[aria-pressed="true"]) .cuttingEdge { opacity: 1; background: #c5eefa99; }
+.cuttingEmpty { height: 94px; display: grid; place-items: center; color: #acb7c8; border: 1px dashed #66758a; }
+.cuttingSeekLane { display: block; width: 100%; height: 22px; padding: 0; border: 0; cursor: crosshair; background: #252f3d; touch-action: none; }
+.cuttingSeekLane:hover, .cuttingRuler:hover { background: #33455d; }
+.cuttingInsert { position: absolute; z-index: 5; top: 26px; height: 94px; width: 2px; background: #f3d98c; pointer-events: none; }
+.cuttingDragGhost { position: absolute; z-index: 6; top: 35px; height: 65px; transform: translateX(-50%); display: grid; align-content: center; padding: 4px 8px; border: 1px solid #e6f7fb; border-radius: 4px; background: #28617be8; color: white; pointer-events: none; white-space: nowrap; overflow: hidden; box-shadow: 0 6px 18px #0009; }
+.cuttingDragGhost small { overflow: hidden; text-overflow: ellipsis; }
+.cuttingTrimPreview { position: absolute; z-index: 5; top: 1px; right: 4px; color: #f3d98c; font-size: 11px; pointer-events: none; }
+.cuttingPlayhead { position: absolute; z-index: 5; top: 0; bottom: 0; width: 2px; background: #efbd6d; pointer-events: none; }
+.timelineHeader { display: flex; justify-content: space-between; align-items: center; gap: 10px; color: #b9c2d2; font-size: 12px; }
+.scroll { overflow-x: auto; margin-top: 17px; }
+.ruler { position: relative; min-width: 100%; padding: 10px 0; }
+.ruler > input { width: 100%; margin: 0; position: relative; z-index: 2; }
+.ticks { display: flex; justify-content: space-between; margin-top: 12px; color: #9ba8ba; font-size: 11px; }
+.selection { position: absolute; top: 0; height: 32px; background: #547bc766; pointer-events: none; }
+.frameTimeline { min-width: 0; width: 100%; height: 100%; min-height: 150px; display: flex; flex-direction: column; gap: 8px; }
+.timeline .frameTimeline { height: 150px; }
+.frameTimeline .timelineHeader button { border: 1px solid #596377; border-radius: 5px; background: #313946; color: inherit; padding: 3px 7px; cursor: pointer; }
+.overview { flex: 0 0 17px; height: 17px; margin: auto 0 0; position: relative; background: #293442; border-radius: 3px; touch-action: none; cursor: ew-resize; overflow: hidden; }
+.overviewWindow { position: absolute; top: 0; bottom: 0; background: #8eb5ef33; border: 2px solid #91b8f0; border-radius: 3px; pointer-events: none; }
+.overviewSelection { position: absolute; top: 0; bottom: 0; background: #6084ce99; pointer-events: none; }
+.overviewActiveShot { position: absolute; inset-block: 0; background: #6084ce99; pointer-events: none; }
+.overviewCuttingSource { position: absolute; z-index: 2; inset-block: 0; border: 2px solid #e6f7fb; pointer-events: none; }
+.overview:has(.overviewActiveShot) .overviewSelection { z-index: 1; background: transparent; border: 1px dashed #e6b978; }
+.frameCanvas { flex-shrink: 0; display: block; width: 100%; height: 86px; cursor: crosshair; touch-action: none; }
+.draftOffer { position: fixed; z-index: 30; top: 64px; left: 50%; transform: translateX(-50%); background: #2d3542; border: 1px solid #7591b8; border-radius: 8px; padding: 10px 14px; display: flex; align-items: center; gap: 12px; box-shadow: 0 8px 24px #0009; }
+.draftOffer button, .leaveDialog button { color: inherit; background: #36445a; border: 1px solid #7084a4; border-radius: 5px; padding: 6px 10px; cursor: pointer; }
+.leaveBackdrop { position: fixed; z-index: 50; inset: 0; background: #000a; display: grid; place-items: center; }
+.leaveDialog { width: min(420px, calc(100vw - 32px)); padding: 20px; background: #252a33; border: 1px solid #657792; border-radius: 10px; display: grid; gap: 10px; }
+.leaveDialog h2 { margin: 0; font-size: 18px; }
+.resizeHandle { position: relative; background: #17191e; touch-action: none; user-select: none; outline: none; z-index: 5; }
+.resizeHandle::after { content: ""; position: absolute; border-radius: 3px; background: #68758b; opacity: .35; transition: opacity .15s, background .15s; }
+.verticalHandle { cursor: col-resize; }
+.verticalHandle::after { width: 2px; height: 32px; top: calc(50% - 16px); left: 2px; }
+.horizontalHandle { cursor: row-resize; height: 6px; flex: 0 0 6px; }
+.horizontalHandle::after { height: 2px; width: 40px; left: calc(50% - 20px); top: 2px; }
+.resizeHandle:hover, .resizeHandle:focus-visible, .resizeHandle:active { background: #45587b; }
+.resizeHandle:hover::after, .resizeHandle:focus-visible::after, .resizeHandle:active::after { opacity: 1; background: #b5caff; }
+
+.controlsVisible, .playerControls:has(:focus-visible) { opacity: 1; visibility: visible; pointer-events: auto; }

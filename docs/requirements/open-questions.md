@@ -2,6 +2,8 @@
 
 以下内容尚未确认，不属于最终需求。
 
+视频下载精简首版已确认，见[下载 PRD](features/video-download.md)；延期能力不作为未决阻塞项，见[后续清单](../design/video-download-backlog.md)。分镜与片段编辑讨论仍见[视频工作流](features/video-workflow-discussion.md)。
+
 | 优先级 | ID | 问题 | 影响 |
 |---|---|---|---|
 | P0 | OQ-007 | 技能页第一版要支持创建、编辑、删除、启停，还是先展示预置技能列表？ | 技能模块工作量 |

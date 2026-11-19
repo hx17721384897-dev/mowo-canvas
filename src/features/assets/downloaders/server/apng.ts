@@ -47,6 +47,11 @@ export function isAnimatedPng(data: Uint8Array) {
   return findAnimationControl(data) !== null;
 }
 
+export function apngFrameCount(data: Buffer) {
+  const control = findAnimationControl(data);
+  return control ? data.readUInt32BE(control.dataStart) : 1;
+}
+
 export function makeApngLoopForever(data: Uint8Array) {
   const source = Buffer.from(data.buffer, data.byteOffset, data.byteLength);
   const control = findAnimationControl(source);

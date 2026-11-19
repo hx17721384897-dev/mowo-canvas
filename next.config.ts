@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  distDir: process.env.MOWO_NEXT_DIST_DIR || ".next",
   serverExternalPackages: ["better-sqlite3"],
   /* config options here */
   cacheComponents: true,

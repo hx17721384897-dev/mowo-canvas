@@ -1,0 +1,17 @@
+.container { color: #ecedf5; font-size: 13px; }
+.inline { width: min(360px, 100%); }
+.screen { min-height: 100dvh; display: grid; place-items: center; padding: 24px; background: #12141a; }
+.overlay { position: fixed; inset: 0; z-index: 2000; display: grid; place-items: center; padding: 24px; background: #10121988; backdrop-filter: blur(3px); pointer-events: none; }
+.card { width: 100%; max-width: 380px; padding: 22px 24px; border: 1px solid #ffffff16; border-radius: 16px; background: #20232c; box-shadow: 0 16px 56px #0003; }
+.inline .card { max-width: none; padding: 16px 18px; box-shadow: none; }
+.heading { display: flex; align-items: center; gap: 9px; margin-bottom: 15px; }
+.heading strong { font-weight: 550; letter-spacing: .02em; }
+.indicator { width: 7px; height: 7px; border-radius: 50%; background: #aaa0ff; box-shadow: 0 0 10px #aaa0ff40; flex-shrink: 0; }
+.value { margin-left: auto; font-size: 11px; color: #a6a9b8; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.track { height: 4px; border-radius: 9px; overflow: hidden; background: #ffffff12; }
+.fill, .flow { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #8172dc, #b3a8ff); }
+.fill { transition: width .2s ease; }
+.flow { width: 38%; animation: travel 1.5s ease-in-out infinite; }
+.description { margin: 12px 0 0; color: #a6a9b8; font-size: 12px; line-height: 1.6; }
+@keyframes travel { from { transform: translateX(-110%); } to { transform: translateX(370%); } }
+@media (prefers-reduced-motion: reduce) { .flow { animation: none; width: 100%; opacity: .55; } .fill { transition: none; } }

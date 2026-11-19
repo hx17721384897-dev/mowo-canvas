@@ -1,8 +1,7 @@
-import Link from "next/link";
+import { ProjectList } from "./components/project-list";
 import { connection } from "next/server";
-import { listProjects } from "@/features/projects/server/project-service";
+import { getCanvasDocument, listProjects } from "@/features/projects/server/project-service";
 import { Icon, type IconName } from "./components/app-icon";
-import { NewCanvasButton } from "./components/new-canvas-button";
 import styles from "./ui-shell.module.css";
 
 const navigation: Array<{ icon: IconName; label: string; active?: boolean }> = [
@@ -11,17 +10,22 @@ const navigation: Array<{ icon: IconName; label: string; active?: boolean }> = [
   { icon: "layers", label: "技能" },
 ];
 
-const tones = ["violet", "blue", "mint", "amber", "rose", "indigo"] as const;
-
 export const instant = false;
 
-function formatUpdatedAt(value: string) {
-  return `${new Intl.DateTimeFormat("zh-CN", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "Asia/Shanghai" }).format(new Date(value))} 更新`;
-}
 
 export default async function Home() {
   await connection();
   const projects = await listProjects();
+  const cards = await Promise.all(projects.map(async (project) => {
+    const document = await getCanvasDocument(project.id).catch(() => null);
+    const cover = document?.nodes.find((node) => node.type === "module" && node.data.moduleType === "image" && node.data.assetId);
+    return {
+      ...project,
+      coverId: cover?.type === "module" ? cover.data.assetId : undefined,
+      nodes: document?.nodes.length ?? 0,
+      edges: document?.edges.length ?? 0,
+    };
+  }));
   return (
     <main className={styles.homeShell}>
       <aside className={styles.homeSidebar}>
@@ -46,48 +50,7 @@ export default async function Home() {
       </aside>
 
       <section className={styles.homeContent}>
-        <header className={styles.homeHeader}>
-          <div>
-            <p className={styles.eyebrow}>工作空间</p>
-            <h1>我的画布</h1>
-            <p>继续最近的工作流，或从一张空白画布开始。</p>
-          </div>
-          <NewCanvasButton className={styles.primaryButton} />
-        </header>
-
-        <div className={styles.projectControls}>
-          <label className={styles.searchField}>
-            <Icon name="search" />
-            <input aria-label="搜索画布" placeholder="搜索画布" type="search" />
-          </label>
-          <button className={styles.sortButton} type="button">
-            最近更新
-            <Icon name="chevron-down" />
-          </button>
-        </div>
-
-        <div className={styles.projectGrid}>
-          <NewCanvasButton card className={styles.newCanvasCard} />
-
-          {projects.map((project, index) => (
-            <Link className={styles.projectCard} href={`/canvas/${project.id}`} key={project.id}>
-              <div className={`${styles.projectPreview} ${styles[`preview_${tones[index % tones.length]}`]}`}>
-                <div className={styles.previewTopRow}><span /><span /><span /></div>
-                <div className={styles.previewWorkspace}>
-                  <span className={styles.previewNodeA} />
-                  <span className={styles.previewLine} />
-                  <span className={styles.previewNodeB} />
-                  <span className={styles.previewNodeC} />
-                </div>
-              </div>
-              <div className={styles.projectInfo}>
-                <div><h2>{project.name}</h2><p>{formatUpdatedAt(project.updatedAt)}</p></div>
-                <span className={styles.moreButton} aria-hidden="true"><Icon name="more" /></span>
-              </div>
-              <span className={styles.projectTag}>{project.assetCount ? `${project.assetCount} 项资产` : "空白画布"}</span>
-            </Link>
-          ))}
-        </div>
+        <ProjectList cards={cards} />
       </section>
     </main>
   );

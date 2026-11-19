@@ -1,4 +1,4 @@
-.assetPanel { display: flex; min-height: 0; flex: 1; flex-direction: column; }
+.assetPanel { display: flex; min-width: 0; min-height: 0; flex: 1; flex-direction: column; container-type: inline-size; --asset-tile-width: 90px; }
 .assetListViewport { position: relative; min-height: 0; flex: 1; overflow: hidden; }
 .assetListScroller { width: calc(100% + 16px); height: 100%; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: none; -ms-overflow-style: none; }
 .assetListScroller::-webkit-scrollbar { display: none; width: 0; height: 0; }
@@ -23,19 +23,77 @@
 .assetScopeSelect { min-width: 0; max-width: calc(100% - 28px); height: 26px; padding: 0 5px; border: 1px solid transparent; border-radius: 6px; outline: 0; background: transparent; color: #383c49; cursor: pointer; font-size: 11px; font-weight: 700; }
 .assetScopeSelect:hover, .assetScopeSelect:focus-visible { border-color: #dfe1eb; background: #f7f8fb; }
 .assetSectionTitle span { color: #9296a4; font-size: 9px; }
+.assetViewSettings { position: relative; margin-left: auto; }
+.assetViewSettings > button { display: grid; place-items: center; width: 28px; height: 28px; border: 1px solid #e7e8ef; border-radius: 8px; background: #fff; color: #686c7a; cursor: pointer; }
+.assetViewSettings svg { width: 15px; height: 15px; }
+.assetViewMenu { position: absolute; top: 32px; right: 0; z-index: 20; display: grid; width: 112px; padding: 5px; border: 1px solid #e4e5ed; border-radius: 9px; background: #fff; box-shadow: 0 8px 20px #26294420; }
+.assetViewMenu button { padding: 7px; border: 0; border-radius: 5px; background: transparent; text-align: left; cursor: pointer; }
+.assetViewMenu button:hover { background: #f1f0ff; }
+.assetSourceSection { margin: 7px 0; }
+.assetSourceSection > summary { margin-bottom: 8px; padding: 7px 5px; font-weight: 650; cursor: pointer; }
+.assetSourceSection > button, .assetSourceSection form button, .assetSequence > button { margin: 4px; padding: 5px 7px; border: 1px solid #e3e3ee; border-radius: 6px; background: #fff; color: #575c76; cursor: pointer; font-size: 10px; }
+.assetSourceSection form { display: flex; gap: 3px; }
+.assetSourceSection form input { min-width: 0; width: 100%; padding: 5px; border: 1px solid #dedeea; border-radius: 6px; }
+.assetFolderMove { display: flex; align-items: center; gap: 5px; margin: 7px 0; color: #77788d; font-size: 10px; }
+.assetFolderMove select { min-width: 0; max-width: 145px; padding: 4px; border: 1px solid #dddfea; border-radius: 5px; background: white; }
+.assetRelated { margin-top: 8px; padding-top: 7px; border-top: 1px solid #e5e4ef; }
+.assetRelated > strong { display: block; margin-bottom: 6px; font-size: 11px; }
+.assetCardInfo { margin-top: 4px; padding: 2px 5px; border: 0; background: #f2f1ff; color: #5b56bb; border-radius: 5px; cursor: pointer; font-size: 10px; }
+.assetInfoBackdrop { position: fixed; inset: 0; z-index: 200; display: grid; place-items: center; padding: 20px; background: #1c1e2a66; }
+.assetInfoDialog { width: min(480px, 100%); max-height: min(700px, 90vh); overflow: auto; padding: 20px; border-radius: 18px; background: #fff; box-shadow: 0 20px 60px #15162640; }
+.assetInfoDialog header { display: flex; justify-content: space-between; align-items: center; }
+.assetInfoDialog header button { border: 0; background: #f2f2f6; border-radius: 7px; font-size: 20px; cursor: pointer; }
+.assetInfoDialog h3 { overflow-wrap: anywhere; margin: 16px 0 4px; }
+.assetInfoDialog h4 { margin: 20px 0 6px; }
+.assetInfoDialog p { margin: 5px 0; color: #696d7b; }
+.assetInfoDialog ul { display: grid; gap: 8px; margin: 8px 0; padding: 0; list-style: none; }
+.assetInfoDialog li { display: flex; justify-content: space-between; align-items: center; gap: 10px; overflow-wrap: anywhere; }
+.assetInfoDialog li small { color: #9296a4; white-space: nowrap; }
+.assetInfoLocate { flex: none; border: 1px solid #bdbaff; border-radius: 7px; padding: 5px 8px; color: #554ce6; background: #f0efff; box-shadow: 0 0 10px #7367ff55; cursor: pointer; }
 .assetFilters { display: flex; gap: 4px; margin-bottom: 10px; }
 .assetFilters button { padding: 5px 8px; border-radius: 7px; background: #f2f3f7; color: #747988; cursor: pointer; font-size: 9px; }
 .assetFilters .filterActive { background: #6268ec; color: #fff; }
 .assetMessage { margin-bottom: 8px; padding: 7px 8px; border-radius: 7px; background: #eef0ff; color: #5d63d9; font-size: 9px; line-height: 1.4; }
-.assetGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 7px; }
+.assetGrid, .sourceTileGrid { display: grid; grid-template-columns: repeat(auto-fill, var(--asset-tile-width)); align-content: start; gap: 8px; }
+.sourceTileGrid { margin-top: 10px; }
+.sourceAssetTile { min-width: 0; }
+.sourceAssetTile .assetCard { width: 100%; }
+.sourceTileAction { width: 100%; margin-top: 4px; padding: 5px 2px; border: 0; border-radius: 6px; background: #f0efff; color: #514bd1; cursor: pointer; font-size: 9px; }
+.sourceTileAction:hover { background: #e6e3ff; }
+.sourceFolderTile { min-width: 0; padding: 5px; border: 1px solid #e4e5ee; border-radius: 9px; background: #fff; text-align: left; cursor: pointer; }
+.sourceFolderTile:hover { border-color: #bfc3f6; box-shadow: 0 6px 14px rgba(47,52,80,.08); }
+.sourceFolderCover { position: relative; display: grid; width: 100%; aspect-ratio: 1; overflow: hidden; place-items: center; border-radius: 7px; background: #f2f0ff; color: #746be6; }
+.sourceFolderCover img { object-fit: contain; }
+.sourceFolderCover svg { width: 30px; height: 30px; }
+.sourceFolderTile strong, .sourceFolderTile small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sourceFolderTile strong { margin-top: 5px; font-size: 9px; }
+.sourceFolderTile small { margin-top: 2px; color: #9094a2; font-size: 8px; }
+.sourceBreadcrumb { display: flex; align-items: center; gap: 3px; overflow-x: auto; margin: 6px 0 12px; white-space: nowrap; scrollbar-width: none; }
+.sourceBreadcrumb button { max-width: 130px; overflow: hidden; padding: 4px 2px; background: transparent; color: #6a6fd7; cursor: pointer; font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+.sourceBreadcrumb button[aria-current="page"] { color: #343747; font-weight: 650; }
+.sourceBreadcrumb span { display: inline-flex; align-items: center; gap: 3px; }
+.sourceBreadcrumb span[aria-hidden] { color: #a0a3b2; }
+.sourcePageActions { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 4px 0 10px; }
+.sourcePageActions strong { min-width: 100%; overflow-wrap: anywhere; font-size: 11px; }
+.sourcePageActions button, .sourceCreateFolder, .sourceFolderForm button { padding: 5px 7px; border: 1px solid #e3e3ee; border-radius: 6px; background: #fff; color: #575c76; cursor: pointer; font-size: 10px; }
+.sourcePageHeading { margin: 14px 0 6px; font-size: 11px; }
+.sourcePageEmpty { margin: 12px 0; color: #9296a4; font-size: 10px; line-height: 1.5; }
+.sourceFolderForm { display: flex; gap: 4px; margin: 7px 0; }
+.sourceFolderForm input { min-width: 0; flex: 1; padding: 5px; border: 1px solid #dedeea; border-radius: 6px; }
+@container (min-width: 360px) { .assetGrid, .sourceTileGrid { grid-template-columns: repeat(auto-fill, 112px); } }
+@container (min-width: 640px) { .assetGrid, .sourceTileGrid { grid-template-columns: repeat(auto-fill, 118px); } }
 .assetCard { min-width: 0; padding: 5px; border: 1px solid #e7e8ef; border-radius: 9px; background: #fff; cursor: grab; }
 .assetCard:active { cursor: grabbing; }
 .assetCard:hover { border-color: #bfc3f6; box-shadow: 0 6px 14px rgba(47, 52, 80, .08); }
 .assetCardLocatable { cursor: pointer; }
 .assetCardLocatable:focus-visible { border-color: #777cec; outline: 2px solid rgba(98,104,236,.22); outline-offset: 1px; }
-.assetPreview { position: relative; display: grid; aspect-ratio: 1.12; overflow: hidden; place-items: center; border-radius: 7px; background: #f0f1f5; color: #a6aab7; }
-.assetPreview img { object-fit: cover; }
+.assetCard a { display: inline-block; margin-top: 4px; color: #4558ad; font-size: 10px; text-decoration: underline; }
+.assetPreview { position: relative; display: grid; aspect-ratio: 1; overflow: hidden; place-items: center; border-radius: 7px; background: #f0f1f5; color: #a6aab7; }
+.assetPreview img { object-fit: contain; }
 .assetPreview > svg { width: 22px; height: 22px; }
+.videoAssetCover { position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none; }
+.videoAssetCover canvas { width: 100%; height: 100%; object-fit: contain; }
+.videoAssetCover > svg { width: 22px; height: 22px; }
 .duration { position: absolute; right: 4px; bottom: 4px; padding: 2px 4px; border-radius: 4px; background: rgba(22, 24, 32, .76); color: #fff; font-size: 8px; }
 .assetName { display: block; margin-top: 5px; overflow: hidden; font-size: 9px; font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
 .assetMeta { display: block; margin-top: 2px; color: #9a9eab; font-size: 8px; }
@@ -139,3 +197,10 @@
   .downloadSelection { padding: 16px 0 0; }
   .historyBody { grid-template-columns: 160px minmax(0, 1fr); }
 }
+.assetSequence { border: 1px solid #e5e4ef; border-radius: 10px; padding: 8px; margin: 8px 0; background: #fbfaff; }
+.assetSequence summary { display: flex; align-items: center; gap: 9px; cursor: grab; }
+.assetSequence summary > span:last-child { display: grid; gap: 3px; min-width: 0; font-size: 11px; overflow-wrap: anywhere; }
+.assetSequence small { color: #77788d; }
+.assetSequenceCover { position: relative; display: grid; place-items: center; flex: 0 0 42px; height: 42px; border: 1px solid #ddd9ee; border-radius: 7px; background: #f0edff; box-shadow: 3px 3px #e5e0f6, 5px 5px #f0edf9; }
+.assetSequenceCover img { object-fit: contain; }
+.assetSequenceLocate { margin: 8px 0; font-size: 11px; cursor: pointer; color: #5950bb; }

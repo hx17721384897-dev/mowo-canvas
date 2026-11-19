@@ -12,6 +12,11 @@ export type AssetSummary = {
   sourceType: string;
   previewUrl: string | null;
   addedAt: string;
+  animated?: boolean;
+  coverUrl?: string | null;
+  originalUrl?: string | null;
+  clip?: { sourceAssetId: string; startFrame: number; endFrame: number;
+    startSeconds: number; endSeconds: number; sequence: number };
 };
 
 export type AssetProjectSummary = {
@@ -21,3 +26,5 @@ export type AssetProjectSummary = {
 };
 
 export const ASSET_DRAG_TYPE = "application/x-mowo-asset";
+export const SEQUENCE_DRAG_TYPE = "application/x-mowo-sequence";
+export type AssetSequence = { id: string; name: string; frames: Array<AssetSummary & { durationMs?: number }> };

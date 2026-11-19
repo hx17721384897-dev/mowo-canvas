@@ -10,6 +10,22 @@
 
 ## 当前最新原型
 
+- [视频拆帧节点 V01](prototypes/video-frame-node-v01.md)：当前有效，动画/拍摄分支、直接生成与超限后选择，复用共用结果组；截图见同目录 PNG。
+
+- [视频拆帧设计与实施计划](video-frame-extraction.md)：当前有效，复用动图的结果组、编辑和拼接，分阶段实施。
+
+- [视频片段剪辑设计书](video-cutting-design.md)：**当前有效设计，按步骤实施**。定义源帧与成片双时间坐标、预览状态、片段操作及进度目标。
+
+- [Concat 时间轴参考与简化改造记录](video-cutting-concat-reference.md)：记录参考项目 UI、手势、代码分层、MOWO 取舍及实际验收流程。
+
+- [资产栏按来源整理 V01](asset-source-view-v01.md)：**当前最新设计，首版开发中**。记录来源批次、手动文件夹、原始素材与多源产物的展示规则；无配套截图。
+
+- [视频编辑页技术设计](video-editor-architecture.md)：**当前候选，待用户确认，尚未实现**。与[视频观察 PRD 候选](../requirements/features/video-editor.md)对应，覆盖专业时间轴、源帧定位和后台任务衔接。
+
+- [B 站视频下载与入库 V01 设计书](video-download-v01.md)：**精简首版 A—D 已完成实现与交付验证，待用户体验验收**。证据见[实施进度](video-download-progress.md)，环境/许可见[运行材料](video-runtime-notices.md)，按需增强见[后续清单](video-download-backlog.md)。
+
+- [图片裁切 V01 界面候选](prototypes/image-crop-v01-candidate.md)：**当前最新候选，待用户确认，尚未实现**。涵盖网格设置、裁切结果卡片与单张调整窗口。
+
 - [对话输入操作栏 V01](prototypes/chat-composer-v01-preview.md)：**当前最新候选**，功能菜单仅上传文件；文件当前为本地预览，其他模式/模型能力尚未接入。
 
 - [提问卡片 V01](prototypes/clarification-card-v01-preview.md)：**当前最新候选**，只实现样式和本地交互预览，尚未接入助手追问。

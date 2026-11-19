@@ -9,9 +9,8 @@ import * as schema from "./schema";
 
 type AssetDatabase = BetterSQLite3Database<typeof schema>;
 
-const databaseState = globalThis as typeof globalThis & {
-  mowoAssetDatabase?: Promise<AssetDatabase>;
-};
+// Reinitialize after a development module reload so an older connection cannot skip migrations.
+let databasePromise: Promise<AssetDatabase> | undefined;
 
 async function openDatabase() {
   const paths = await ensureAssetDataPaths();
@@ -25,6 +24,9 @@ async function openDatabase() {
 }
 
 export function getAssetDatabase() {
-  databaseState.mowoAssetDatabase ??= openDatabase();
-  return databaseState.mowoAssetDatabase;
+  databasePromise ??= openDatabase().catch((error) => {
+    databasePromise = undefined;
+    throw error;
+  });
+  return databasePromise;
 }

@@ -1,4 +1,5 @@
 import "server-only";
+import { CanvasDocumentError, validateCanvasDocument } from "../canvas-document";
 
 import { randomUUID } from "node:crypto";
 import { and, asc, count, desc, eq, ne } from "drizzle-orm";
@@ -38,27 +39,29 @@ function toProjectSummary(row: {
   };
 }
 
-export async function ensureKnownProjects() {
-  const database = await getAssetDatabase();
-  const now = new Date();
-  database.insert(projects).values(
-    Object.entries(knownProjects).map(([id, name]) => ({ id, name, createdAt: now, updatedAt: now })),
-  ).onConflictDoNothing().run();
-}
-
 export async function ensureProject(projectId: string, name = knownProjects[projectId] ?? "画布项目") {
-  await ensureKnownProjects();
   const database = await getAssetDatabase();
   const now = new Date();
   database.insert(projects).values({ id: projectId, name, createdAt: now, updatedAt: now }).onConflictDoNothing().run();
   return database.select().from(projects).where(eq(projects.id, projectId)).get()!;
 }
 
-export async function createProject(name = "未命名画布") {
+export async function createProject(requestedName?: string) {
   const database = await getAssetDatabase();
   const id = randomUUID();
   const now = new Date();
-  database.transaction((transaction) => {
+  const name = database.transaction((transaction) => {
+    const rows = transaction.select().from(projects).orderBy(asc(projects.createdAt), asc(projects.id)).all();
+    let next = rows.reduce((max, row) => {
+      const match = /^无限画布 (\d+)$/.exec(row.name);
+      return match ? Math.max(max, Number(match[1])) : max;
+    }, 0) + 1;
+    for (const row of rows) {
+      if (row.id !== "new" && ["未命名画布", "画布项目"].includes(row.name)) {
+        transaction.update(projects).set({ name: `无限画布 ${next++}` }).where(eq(projects.id, row.id)).run();
+      }
+    }
+    const name = requestedName ?? `无限画布 ${next}`;
     transaction.insert(projects).values({ id, name, createdAt: now, updatedAt: now }).run();
     transaction.insert(canvasDocuments).values({
       projectId: id,
@@ -69,12 +72,12 @@ export async function createProject(name = "未命名画布") {
       createdAt: now,
       updatedAt: now,
     }).run();
+    return name;
   });
   return { id, name, assetCount: 0, createdAt: now.toISOString(), updatedAt: now.toISOString() } satisfies ProjectSummary;
 }
 
 export async function listProjects(excludeProjectId?: string) {
-  await ensureKnownProjects();
   const database = await getAssetDatabase();
   const where = excludeProjectId
     ? and(ne(projects.id, "new"), ne(projects.id, excludeProjectId))
@@ -85,41 +88,49 @@ export async function listProjects(excludeProjectId?: string) {
     assetCount: count(projectAssets.assetId),
     createdAt: projects.createdAt,
     updatedAt: projects.updatedAt,
+    documentId: canvasDocuments.projectId,
   }).from(projects)
     .leftJoin(projectAssets, eq(projects.id, projectAssets.projectId))
+    .leftJoin(canvasDocuments, eq(projects.id, canvasDocuments.projectId))
     .where(where)
     .groupBy(projects.id)
-    .orderBy(desc(projects.updatedAt), asc(projects.name))
+    .orderBy(desc(projects.createdAt), desc(projects.id))
     .all();
-  return rows.map(toProjectSummary);
+  return rows.filter((row) => !Object.hasOwn(knownProjects, row.id) || row.assetCount > 0 || row.documentId).map(toProjectSummary);
 }
 
 export async function openProject(projectId: string) {
-  const project = await ensureProject(projectId);
   const database = await getAssetDatabase();
-  const now = new Date();
-  database.update(projects).set({ updatedAt: now }).where(eq(projects.id, projectId)).run();
-  return { ...project, updatedAt: now };
+  return database.select().from(projects).where(eq(projects.id, projectId)).get();
+}
+
+export async function renameProject(id: string, name: string) {
+  const database = await getAssetDatabase();
+  const updatedAt = new Date();
+  const result = database.update(projects).set({ name, updatedAt }).where(eq(projects.id, id)).run();
+  return result.changes ? { name, updatedAt: updatedAt.toISOString() } : null;
 }
 
 export async function getCanvasDocument(projectId: string): Promise<CanvasDocumentState | null> {
   const database = await getAssetDatabase();
   const document = database.select().from(canvasDocuments).where(eq(canvasDocuments.projectId, projectId)).get();
   if (!document) return null;
+  let decoded: unknown;
   try {
-    return {
-      schemaVersion: 1,
-      nodes: JSON.parse(document.nodesJson) as CanvasDocumentState["nodes"],
-      edges: JSON.parse(document.edgesJson) as CanvasDocumentState["edges"],
-      viewport: JSON.parse(document.viewportJson) as CanvasDocumentState["viewport"],
+    decoded = {
+      schemaVersion: document.schemaVersion,
+      nodes: JSON.parse(document.nodesJson),
+      edges: JSON.parse(document.edgesJson),
+      viewport: JSON.parse(document.viewportJson),
     };
   } catch {
-    throw new Error("画布文档数据损坏，无法读取");
+    throw new CanvasDocumentError("document", "画布文档数据损坏，无法读取", "INVALID_JSON");
   }
+  validateCanvasDocument(decoded);
+  return decoded;
 }
 
 export async function saveCanvasDocument(projectId: string, document: CanvasDocumentState) {
-  await ensureProject(projectId);
   const database = await getAssetDatabase();
   const now = new Date();
   database.transaction((transaction) => {

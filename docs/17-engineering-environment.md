@@ -13,6 +13,8 @@
 
 精确依赖以 `package.json` 和 `package-lock.json` 为准；Node.js 精确开发基线见 `.nvmrc` 与 `.node-version`。
 
+本机视频环境使用固定来源与哈希的独立 Python/yt-dlp/FFmpeg，不依赖系统 PATH。首次执行 `npm run video:setup`；普通 dev/start 同时启动视频执行者。当前构建器采用 Webpack，具体入口与运行材料见[本地部署](09-local-deployment.md)、[视频环境清单](design/video-runtime-notices.md)。
+
 ## 2026-10-29 本机检查记录
 
 | 工具 | 检查结果 |

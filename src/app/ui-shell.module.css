@@ -134,11 +134,8 @@
 .searchField input { width: 100%; border: 0; outline: 0; background: transparent; }
 .searchField input::placeholder { color: #a3a7b5; }
 .sortButton {
-  display: flex;
-  min-width: 130px;
-  align-items: center;
-  justify-content: center;
-  gap: 9px;
+  min-width: 126px;
+  padding-inline: 12px;
   border: 1px solid var(--line);
   border-radius: 12px;
   background: #fff;
@@ -147,7 +144,7 @@
 }
 .sortButton svg { width: 15px; height: 15px; }
 
-.projectGrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+.projectGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 245px), 1fr)); gap: 18px; }
 .projectCard,
 .newCanvasCard {
   width: 100%;
@@ -180,7 +177,10 @@
   color: var(--accent);
 }
 .newCanvasCard :global(.newCanvasIcon) { display: grid; width: 48px; height: 48px; place-items: center; border-radius: 15px; background: var(--accent-soft); color: var(--accent); }
-.projectPreview { height: 165px; padding: 16px; border-bottom: 1px solid #eceef4; background: #f4f5fa; }
+.projectPreview { position: relative; display: grid; place-items: center; width: 100%; aspect-ratio: 4 / 3; overflow: hidden; border-bottom: 1px solid #eceef4; background: #f7f6f3; color: #6b685f; }
+.projectPreview img { object-fit: cover; }
+.emptyProjectPreview { display: grid; justify-items: center; gap: 12px; padding: 12px; text-align: center; }
+.emptyProjectPreview span { display: grid; place-items: center; width: 48px; height: 48px; border: 1px solid #e5e1d8; border-radius: 13px; background: #fffefa; box-shadow: 0 2px 5px #27231314; }
 .preview_violet { --preview-accent: #7779ee; --preview-soft: #dddfff; }
 .preview_blue { --preview-accent: #5d8ce8; --preview-soft: #dbe9ff; }
 .preview_mint { --preview-accent: #4faf90; --preview-soft: #d9f2e8; }
@@ -195,7 +195,24 @@
 .previewNodeB { right: 15%; top: 23%; width: 24%; height: 39%; background: color-mix(in srgb, var(--preview-accent) 24%, white); }
 .previewNodeC { right: 21%; bottom: 12%; width: 31%; height: 17%; background: var(--preview-soft); }
 .previewLine { position: absolute; left: 41%; top: 46%; width: 25%; height: 2px; background: var(--preview-accent); transform: rotate(-8deg); opacity: .75; }
-.projectInfo { display: flex; justify-content: space-between; gap: 12px; padding: 15px 16px 6px; }
+.projectInfo { padding: 15px 16px 10px; }
+.projectInfo form { display: flex; gap: 8px; }
+.projectInfo input { min-width: 0; flex: 1; padding: 3px 6px; border: 1px solid var(--line); border-radius: 5px; }
+.projectActions { display: flex; align-items: center; gap: 6px; margin-top: 12px; padding-top: 8px; border-top: 1px solid var(--line); color: #6d7280; }
+.projectActions time { margin-right: auto; font-size: 11px; }
+.projectActions button { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 6px; cursor: pointer; }
+.projectActions button:hover { background: #f0f1f6; }
+.projectActions svg { width: 17px; height: 17px; }
+.homeHeaderActions { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 8px; }
+.homeHeaderActions button:not(.primaryButton) { padding: 9px 12px; border: 1px solid var(--line); border-radius: 9px; background: #fff; cursor: pointer; }
+.homeHeaderActions .batchDeleteButton { color: #b43340; }
+.homeHeaderActions button:disabled { opacity: .45; cursor: default; }
+.projectCard { position: relative; }
+.selectedProject { border-color: #6763e8; box-shadow: 0 0 0 1px #6763e8; }
+.projectOverlay { position: absolute; z-index: 1; inset: 0; width: 100%; background: transparent; cursor: pointer; }
+.projectOverlay:focus-visible { outline: 2px solid #6763e8; outline-offset: -3px; }
+.projectCheckbox { position: absolute; top: 12px; left: 12px; display: grid; place-items: center; width: 24px; height: 24px; border: 1px solid #85899b; border-radius: 6px; background: #fff; color: #fff; }
+.selectedProject .projectCheckbox { background: #6763e8; border-color: #6763e8; }
 .projectInfo h2 { margin: 0; font-size: 14px; letter-spacing: -0.01em; }
 .projectInfo p { margin: 5px 0 0; color: #8d91a0; font-size: 11px; }
 .moreButton { display: grid; width: 28px; height: 28px; place-items: center; border-radius: 8px; color: #7c8190; }
@@ -271,9 +288,10 @@
 .toolIcon svg { width: 14px; height: 14px; }
 .toolItem > svg { width: 13px; height: 13px; margin-left: auto; color: #9a9eac; }
 .downloadTool { position: relative; }
-.downloadSubmenu { position: absolute; z-index: 20; top: -6px; left: calc(100% + 9px); display: none; width: 190px; gap: 3px; padding: 6px; border: 1px solid #e2e4ed; border-radius: 11px; background: #fff; box-shadow: 0 14px 35px rgba(31,35,52,.16); }
-.downloadTool:hover .downloadSubmenu, .downloadTool:focus-within .downloadSubmenu { display: grid; }
-.downloadSubmenu::before { content: ""; position: absolute; top: 0; right: 100%; width: 10px; height: 100%; }
+.downloadSubmenu { position: absolute; z-index: 41; top: -6px; left: calc(100% + 9px); display: grid; visibility: hidden; transition: visibility 0s linear 150ms; width: 190px; gap: 3px; padding: 6px; border: 1px solid #e2e4ed; border-radius: 11px; background: #fff; box-shadow: 0 14px 35px rgba(31,35,52,.16); }
+.downloadTool:hover .downloadSubmenu, .downloadTool:focus-within .downloadSubmenu { visibility: visible; transition-delay: 0s; }
+/* Bridge the gap above the resize handle while the submenu is visible. */
+.downloadSubmenu::before { content: ""; position: absolute; top: -1px; right: 100%; width: 12px; height: calc(100% + 2px); }
 .downloadSubmenu button { display: flex; align-items: center; gap: 9px; padding: 8px; border-radius: 8px; background: transparent; color: #515563; cursor: pointer; text-align: left; }
 .downloadSubmenu button:hover { background: #f2f3f8; }
 .downloadSubmenu button:disabled { opacity: .45; cursor: not-allowed; }
@@ -327,7 +345,7 @@
   .primaryButton { padding-inline: 12px; }
   .projectGrid { grid-template-columns: 1fr; }
   .projectControls { margin-top: 24px; }
-  .sortButton { min-width: 44px; font-size: 0; }
+  .sortButton { min-width: 0; padding-inline: 6px; font-size: 12px; }
   .editorTopbar { padding-inline: 8px; }
   .topbarBrand, .saveState, .topbarAction { display: none; }
   .editorBody, .editorBody.leftCollapsed, .editorBody.rightCollapsed { grid-template-columns: 0 minmax(0, 1fr) 0; }
@@ -336,3 +354,11 @@
   .bottomTool span { display: none; }
   .bottomTool { width: 34px; justify-content: center; padding: 0; }
 }
+.saveDialog { margin: auto; width: min(720px, 92vw); max-height: 90vh; padding: 24px; border: 1px solid #e2e3ec; border-radius: 16px; background: white; color: #262838; }
+.saveDialog::backdrop { background: rgb(30 32 47 / 35%); }
+.saveDialog h2 { font-size: 18px; font-weight: 700; }
+.saveDialog p { margin: 8px 0; }
+.saveDialog footer { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+.saveDialog footer button { padding: 8px 12px; border: 1px solid #dedfeb; border-radius: 8px; cursor: pointer; }
+.saveComparison { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.saveComparison textarea { width: 100%; min-height: 180px; padding: 8px; background: #f5f6fa; font-family: monospace; font-size: 11px; }

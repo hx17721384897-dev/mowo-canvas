@@ -201,7 +201,7 @@ export async function importDownloadTask(taskId: string, itemIds: string[], disc
       };
     }));
     const result = await importImageBuffers(task.projectId, sources, {
-      name: task.title ?? "LINE 图片集合",
+      name: `${new Date().toLocaleString("zh-CN", { hour12: false })} 下载`,
       sourceType: "line",
       sourceUrl: task.sourceUrl,
     });

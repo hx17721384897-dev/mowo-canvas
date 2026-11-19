@@ -1,0 +1,1 @@
+ALTER TABLE `video_shot_analyses` ADD `device` text;

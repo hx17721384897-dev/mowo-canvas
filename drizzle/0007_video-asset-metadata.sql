@@ -1,0 +1,1 @@
+ALTER TABLE `assets` ADD `video_metadata_json` text;

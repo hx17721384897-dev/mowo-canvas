@@ -14,8 +14,6 @@ export function NewCanvasButton({ className, card = false }: { className: string
     try {
       const response = await fetch("/api/projects", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: "未命名画布" }),
       });
       const payload = await response.json() as { project?: { id: string }; error?: string };
       if (!response.ok || !payload.project) throw new Error(payload.error ?? "创建失败");

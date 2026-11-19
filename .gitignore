@@ -1,6 +1,7 @@
 # Dependencies and build outputs
 node_modules/
 .next/
+/.next-*/
 out/
 dist/
 coverage/
@@ -15,6 +16,8 @@ next-env.d.ts
 !.env.example
 
 # Local runtime data
+data/video-runtime/
+scripts/video/__pycache__/
 data/app.db
 data/app.db-*
 data/assets/**
