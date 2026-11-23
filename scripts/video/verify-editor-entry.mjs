@@ -5,35 +5,38 @@ import { createReadStream } from 'node:fs';
 import { once } from 'node:events';
 import { createServer } from 'node:net';
 import { copyFile, mkdtemp, open, readFile, readdir, realpath, rm, stat } from 'node:fs/promises';
-import { join, resolve } from 'node:path';
+import { basename, dirname, join, resolve } from 'node:path';
 import Database from 'better-sqlite3';
 import { checkEditorBrowser } from './check-editor-browser.mjs';
 
-const root = await mkdtemp(resolve('data/video-runtime/editor-entry-'));
-const fixture = join(root, 'long.mp4');
-const hevcFixture = join(root, 'hevc.mp4');
-const ffmpeg = resolve('data/video-runtime/tools/ffmpeg.exe');
-const generator = spawn(ffmpeg, ['-v', 'error', '-f', 'lavfi', '-i', 'testsrc2=size=160x90:rate=1',
-  '-t', '301', '-c:v', 'libx264', '-preset', 'ultrafast', '-pix_fmt', 'yuv420p', '-an', fixture],
-{ windowsHide: true, stdio: 'ignore' });
-assert.equal((await once(generator, 'exit'))[0], 0, 'generate local 301-second fixture');
-const hevcGenerator = spawn(ffmpeg, ['-v', 'error', '-f', 'lavfi', '-i', 'testsrc2=size=160x90:rate=24',
-  '-t', '3', '-c:v', 'libx265', '-preset', 'ultrafast', '-x265-params', 'pools=1:frame-threads=1',
-  '-pix_fmt', 'yuv420p', '-an', hevcFixture], { windowsHide: true, stdio: 'ignore' });
-assert.equal((await once(hevcGenerator, 'exit'))[0], 0, 'generate local HEVC fixture');
-const portProbe = createServer();
-portProbe.listen(0, '127.0.0.1');
-await once(portProbe, 'listening');
-const port = portProbe.address().port;
-await new Promise(accept => portProbe.close(accept));
-const base = `http://127.0.0.1:${port}`;
-const app = spawn(process.execPath, [resolve('node_modules/next/dist/bin/next'), 'dev', '--webpack',
-  '-H', '127.0.0.1', '-p', String(port)], { windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'],
-  env: { ...process.env, MOWO_DATA_ROOT: join(root, 'data'), MOWO_NEXT_DIST_DIR: process.env.MOWO_NEXT_DIST_DIR || '.next-editor-test' } });
+const fixtureParent = await realpath(resolve('data/video-runtime'));
+const root = await mkdtemp(join(fixtureParent, 'editor-entry-'));
+const keepFixture = process.argv.includes('--keep-fixture');
+let app;
 let logs = '';
-for (const stream of [app.stdout, app.stderr]) stream.on('data', chunk => { logs = (logs + chunk).slice(-3000); });
 const delay = ms => new Promise(accept => setTimeout(accept, ms));
 try {
+  const fixture = join(root, 'long.mp4');
+  const hevcFixture = join(root, 'hevc.mp4');
+  const ffmpeg = resolve('data/video-runtime/tools/ffmpeg.exe');
+  const generator = spawn(ffmpeg, ['-v', 'error', '-f', 'lavfi', '-i', 'testsrc2=size=160x90:rate=1',
+    '-t', '301', '-c:v', 'libx264', '-preset', 'ultrafast', '-pix_fmt', 'yuv420p', '-an', fixture],
+  { windowsHide: true, stdio: 'ignore' });
+  assert.equal((await once(generator, 'exit'))[0], 0, 'generate local 301-second fixture');
+  const hevcGenerator = spawn(ffmpeg, ['-v', 'error', '-f', 'lavfi', '-i', 'testsrc2=size=160x90:rate=24',
+    '-t', '3', '-c:v', 'libx265', '-preset', 'ultrafast', '-x265-params', 'pools=1:frame-threads=1',
+    '-pix_fmt', 'yuv420p', '-an', hevcFixture], { windowsHide: true, stdio: 'ignore' });
+  assert.equal((await once(hevcGenerator, 'exit'))[0], 0, 'generate local HEVC fixture');
+  const portProbe = createServer();
+  portProbe.listen(0, '127.0.0.1');
+  await once(portProbe, 'listening');
+  const port = portProbe.address().port;
+  await new Promise(accept => portProbe.close(accept));
+  const base = `http://127.0.0.1:${port}`;
+  app = spawn(process.execPath, [resolve('node_modules/next/dist/bin/next'), 'dev', '--webpack',
+    '-H', '127.0.0.1', '-p', String(port)], { windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'],
+    env: { ...process.env, MOWO_DATA_ROOT: join(root, 'data'), MOWO_NEXT_DIST_DIR: process.env.MOWO_NEXT_DIST_DIR || '.next-editor-test' } });
+  for (const stream of [app.stdout, app.stderr]) stream.on('data', chunk => { logs = (logs + chunk).slice(-3000); });
   let ready = false;
   for (let i = 0; i < 120 && app.exitCode === null; i++) {
     try { ready = (await fetch(base + '/api/projects', { signal: AbortSignal.timeout(1000) })).ok; } catch { /* starting */ }
@@ -303,7 +306,7 @@ try {
     console.error('Editor fixture failed; recent app output:', logs.slice(-1200));
   throw error;
 } finally {
-  if (app.exitCode === null) {
+  if (app && app.exitCode === null && app.signalCode === null) {
     const ended = once(app, 'close');
     if (process.platform === 'win32' && app.pid) {
       const stop = spawn('taskkill.exe', ['/PID', String(app.pid), '/T', '/F'], { windowsHide: true, stdio: 'ignore' });
@@ -311,10 +314,13 @@ try {
     } else app.kill('SIGTERM');
     await ended;
   }
-  if (process.argv.includes('--large') || process.argv.includes('--shots') || process.argv.includes('--cutting-playback-modes')) {
-    const parent = await realpath(resolve('data/video-runtime'));
+  if (keepFixture) {
+    console.log('Retained isolated editor fixture:', root);
+  } else {
     const target = await realpath(root);
-    assert.ok(target.startsWith(parent + '\\') && target !== parent, 'cleanup must stay inside video runtime fixtures');
-    await rm(target, { recursive: true, force: true });
+    assert.ok(target === root && dirname(target) === fixtureParent && basename(target).startsWith('editor-entry-'),
+      'cleanup must target the fixture created by this run');
+    await rm(target, { recursive: true, maxRetries: 5, retryDelay: 200 });
+    console.log('Removed isolated editor fixture:', root);
   }
 }
