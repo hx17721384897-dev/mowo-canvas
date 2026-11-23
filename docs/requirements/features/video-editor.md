@@ -1,6 +1,6 @@
 # 视频观察与片段回画布 PRD
 
-> 状态：2026-11-13 产品流程已确认，首期观察、准确源帧读取、片段保存与回画布的代码已接通，仍处于验收收尾。真实超 500 MiB 文件、异常编码和播放边界精度仍须技术验证。入口来自[本地视频导入](local-video-import.md)和 B 站视频资产。技术实现见[视频编辑页技术设计](../../design/video-editor-architecture.md)，进度见[实施记录](../../design/video-editor-progress.md)，讨论沿革见[讨论记录](video-editor-discussion.md)。
+> 状态：观察、精确帧读取、片段保存、分镜及人工校正已接入。用户反馈分镜正常，剪辑的真实素材验收见[剪辑设计](../../design/video-cutting-design.md#真实素材验收)。长片、复杂时间戳和跨电脑分镜仍待专项确认。入口来自[本地视频导入](local-video-import.md)和 B 站视频资产。技术边界见[视频编辑页技术设计](../../design/video-editor-architecture.md)，专项证据见[实施记录](../../design/video-editor-progress.md)。
 
 ## 目标与范围
 

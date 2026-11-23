@@ -1,70 +1,23 @@
 ---
 name: mowo-project
-description: Plan, build, review, document, test, or operate the MOWO Canvas project. Use for any task inside this project; routes work to the minimum current documentation while excluding abandoned designs and unrelated history.
+description: 接手、规划、实现或审查 MOWO Canvas 时，按任务定位当前记录、代码入口和收尾规则。
 ---
 
-# MOWO Canvas Project Skill
+# MOWO Canvas 项目 Skill
 
-Use the project root as the working directory. Start every task by reading `../../../PROJECT_STATUS.md`, then load only the documents required by the routing table below. Do not read all project documents.
+1. 从项目根目录读取 [PROJECT_STATUS.md](../../../PROJECT_STATUS.md)。接手某项功能时，打开对应专题或在办计划。
+2. 按任务选择下表的参考资料。定位到入口与约束后，继续查相关代码；查询历史时只打开对应日志、Git 提交或隔离材料。
+3. **规划、实施、收尾或审查**时，读取[开发指南](../../../docs/08-development-guide.md)，按任务范围核对计划、变更、验证与记录。
 
-## Task routing
-
-For feature planning, architecture design, or scope changes, read and follow the "功能完整性与复杂度控制" section in `../../../AGENTS.md` before proposing the implementation plan. Keep the rules there as the single source of truth.
-
-| Task | Read after project status |
+| 任务 | 补读 |
 |---|---|
-| Product goals or feature scope | `../../../docs/01-project-overview.md`, `../../../docs/02-product-scope.md` |
-| Milestone or iteration planning | `../../../docs/03-roadmap.md` |
-| Architecture, dependencies, module boundaries | `../../../docs/04-architecture.md` |
-| Database, persistence, import/export, assets | `../../../docs/05-data-design.md` |
-| Canvas, nodes, edges, viewport, shortcuts | `../../../docs/06-canvas-design.md` |
-| Find or add project files | `../../../docs/07-file-map.md` |
-| Implement, test, or commit changes | `../../../docs/08-development-guide.md` plus the feature document |
-| Local setup, launch, or update | `../../../docs/09-local-deployment.md` |
-| Public or cloud deployment | `../../../docs/10-future-online-deployment.md`, `../../../docs/11-security-and-backup.md` |
-| Backup, recovery, upload, security | `../../../docs/11-security-and-backup.md` |
-| Evaluate or import a starter/template | `../../../docs/12-template-selection.md` |
-| Authentication, users, teams, permissions | `../../../docs/13-account-system-plan.md` |
-| Capture requirements or edit a PRD | `../../../docs/requirements/README.md`, then only the current PRD, open questions, or named feature |
-| Add or change an API or cross-layer contract | `../../../docs/api/README.md`, then only the named API document |
-| Prototype, screenshot, visual or interaction design | `../../../docs/design/README.md`, then only the named prototype |
-| Node.js, npm, scaffolding, or local engineering environment | `../../../docs/17-engineering-environment.md` |
-| Database MCP or direct AI database access | `../../../docs/18-database-mcp.md`, `../../../docs/11-security-and-backup.md` |
-| Explain why an accepted direction exists | `../../../docs/decisions/README.md`, then only the named ADR |
+| 功能范围或里程碑 | [产品范围](../../../docs/02-product-scope.md)或[路线图](../../../docs/03-roadmap.md) |
+| 调整模块职责或依赖 | [技术架构](../../../docs/04-architecture.md)。查文件责任时用[文件地图](../../../docs/07-file-map.md) |
+| 改持久化或画布保存 | [数据设计](../../../docs/05-data-design.md)的对应章节 |
+| 写 PRD 或核对确认的行为 | [需求入口](../../../docs/requirements/README.md)中的对应专题 |
+| 改 API 或数据契约 | [接口索引](../../../docs/api/README.md)中的对应契约 |
+| 改交互方案或原型 | [设计索引](../../../docs/design/README.md)中的对应专题 |
+| 运行、部署或备份 | [本地运行](../../../docs/09-local-deployment.md)或[安全与备份](../../../docs/11-security-and-backup.md) |
+| 查术语或长期决定 | [术语表](../../../GLOSSARY.md)或[决策索引](../../../docs/decisions/README.md) |
 
-Paths above are relative to this `SKILL.md`.
-
-## Current-truth rules
-
-- Treat `PROJECT_STATUS.md` and numbered topic documents as current truth.
-- Never load `../../../docs/archive/` unless the user explicitly asks to inspect, compare, recover, or summarize history.
-- Do not resurrect an abandoned option because it appears in Git history, logs, or archives.
-- Keep one authoritative location per rule; link instead of duplicating content.
-- If code and current docs disagree, inspect the code and relevant evidence, then resolve the mismatch before extending the design.
-- Put confirmed product behavior in the current PRD. Put incomplete information in open questions; never promote inference into a requirement.
-
-## Change workflow
-
-1. Confirm the requested work is inside the current product scope. If it changes scope, update scope and roadmap only after user agreement.
-2. Inspect the Git worktree and preserve unrelated user changes.
-3. Before a design experiment or broad refactor, create a recoverable Git checkpoint or isolated branch.
-4. Make the smallest coherent change and verify it in proportion to risk.
-5. If accepted, update only the affected current document and `PROJECT_STATUS.md`; update `CHANGELOG.md` only for a stable delivered version.
-6. If abandoned, restore the pre-experiment checkpoint. Remove the experiment from current docs and the current log. Archive details only when the user explicitly wants them retained.
-
-## Documentation economy
-
-- Keep `PROJECT_STATUS.md` short enough to read on every task.
-- Do not add routine implementation details to architecture documents.
-- Do not create ADRs for ordinary code changes; use them for accepted decisions with lasting consequences.
-- Keep `docs/logs/current.md` limited to the active iteration and observable verification.
-- Update `docs/07-file-map.md` only for maintained source or configuration structure, never generated files or user data.
-- When an API or cross-layer contract changes, update its API document in the same change.
-- Store current prototype screenshots under `docs/design/prototypes/`; confirmation, not the screenshot alone, promotes behavior into the PRD.
-
-## Project boundaries
-
-- The current product is local-first and single-user.
-- Do not add authentication, cloud hosting, AI generation, billing, collaboration, or overseas service dependencies unless the user moves that capability into scope.
-- Prefer self-hostable and China-accessible choices when a future external dependency is evaluated.
-- Do not install a full SaaS starter. Evaluate focused templates under `docs/12-template-selection.md`.
+核对代码与现行记录的差异后再延伸设计。每条规则在对应专题维护一处。当前产品范围为本地优先、单用户，范围变更按 [AGENTS.md](../../../AGENTS.md) 的规则处理。

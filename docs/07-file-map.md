@@ -70,8 +70,6 @@ src/
 
 ## 可扩展文档目录
 
-scripts/check-ai-ui.mjs 验证聊天组件 SSR，scripts/verify-ai-stage0.mjs 与 ai-stage0-worker.mjs 验证隔离后台流式执行。检查范围与状态见 [阶段 0 清单](ai/stage-0-checklist.md)。
-
 [AI 与 Agent 接入工作区](ai/README.md)集中管理模型接入想法、供应商资料和待讨论事项。
 
 ```text
@@ -117,7 +115,7 @@ docs/
 - `src/features/video-editor/server/clips.ts`、`preview.ts`：片段正式保存和兼容预览生成；`drizzle/0008_*.sql` 与 `0009_*.sql` 增加片段与草稿表。
 - `src/features/video-editor/server/render-composition.ts`、`deliver-composition.ts`：按剪辑工程源帧范围渲染/校验 MP4，交付下载或保存并放入画布；`drizzle/0015_*.sql` 记录工程版本对应的成片资产。
 - `src/app/api/projects/[id]/video-editor/[assetId]/`：帧索引、源帧图、片段、选区草稿、剪辑工程与预览状态接口；工程数据表由迁移 0013 建立。
-- `scripts/video/verify-editor-entry.mjs`、`check-editor-browser.mjs`：隔离数据目录中的视频编辑链路与浏览器验收。
+- `scripts/video/verify-editor-entry.mjs`、`check-editor-browser.mjs`：隔离数据目录中的视频编辑链路与浏览器验收。脚本结束后回收本次样本目录，需要排查时加 `--keep-fixture`，终端会输出保留位置。
 
 ## B 站视频下载
 

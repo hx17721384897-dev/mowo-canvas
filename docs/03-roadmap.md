@@ -53,7 +53,7 @@ A—D 已完成下载、确认入库、兼容预览和交付收尾；下一步�
 
 ## 阶段 4：上线准备
 
-上线准备前优先推进已认可的本地 AI 接入迭代，见 [Agent 实施计划](ai/agent-implementation-plan.md)。按准备验证、V1 对话、V2 生图入画布推进；后续依次为 @ 引用、搜索和 Skill。每阶段按该计划验收，完成检查与 Git 存档。
+上线准备前优先推进本地 AI 接入。V1 待完成的设置与存储、V2 生图入画布及后续引用、搜索和 Skill 的进入条件见 [AI 长期路线](ai/agent-implementation-plan.md)。
 
 - 引入账户和权限。
 - SQLite 迁移到 PostgreSQL。

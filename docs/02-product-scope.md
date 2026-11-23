@@ -44,7 +44,7 @@
 
 ## 已认可的 AI 接入迭代
 
-先完成接入准备与依赖验证，再实施 V1 基础对话和 V2 图像生成。V1 包含 DeepSeek 配置、流式对话、停止、重试与会话持久化。V2 包含一个图像供应商、生成任务恢复、资产入库及编辑器应用图片节点。结果进入撤销与保存链路，画布关闭时保留待放置结果。具体验收以 [Agent 实施计划](ai/agent-implementation-plan.md) 为准。
+V1 基础对话已接入。正式模型设置和密钥存储仍属 V1 后续工作，当前范围见[设置与模型需求](requirements/features/settings-and-models.md)。V2 图像生成及后续阶段的范围和进入条件见 [AI 长期路线](ai/agent-implementation-plan.md)。
 
 @ 资产引用、联网搜索和 Skill 分别安排在 V3、V4、V5。当前进入准备阶段，已认可范围与已实现能力需分别记录。
 

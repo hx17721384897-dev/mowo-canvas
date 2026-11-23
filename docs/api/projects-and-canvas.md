@@ -19,6 +19,8 @@
 
 ## 验证
 
+用 `node --no-warnings --experimental-strip-types --test src/features/projects/canvas-document.test.ts` 验证画布文档结构与兼容字段。改动自动保存或草稿恢复时，用隔离项目另验保存失败、排序及重开后的草稿选择。
+
 ## 导出画布组
 
 `POST /api/projects/:id/group-export` 接收 `{ name, entries: [{ assetId, directories, order? }] }`，返回 `application/zip` 附件。`name` 仅用于本次文件名；有序项的 `order` 生成零填充序号并保留资产扩展名，普通项使用原文件名，路径重名自动加后缀。服务端逐项验证资产属于当前项目、文件存在且为图片或视频，最多 1000 项、总原始文件大小不超过 2 GB、嵌套目录最多 8 层。清单无效、文件缺失或超限返回 `400` 或 `413`，不修改资产或画布。ZIP 逐文件流式生成；同一请求可重复导出相同内容。测试覆盖顺序、同名处理和 ZIP 字节内容。

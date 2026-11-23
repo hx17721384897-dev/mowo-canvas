@@ -1,6 +1,6 @@
 # V1 基础对话实施进度
 
-更新：2026-11-06。唯一产品方案仍是 [实施计划](agent-implementation-plan.md)，本文记录实现证据，不是另一份计划或原型草稿。
+本页只维护 V1 的实现与验证证据。用户行为见[设置与模型需求](../requirements/features/settings-and-models.md)，当前接口见[运行接口](../api/ai-runs.md)，后续分期见[AI 长期路线](agent-implementation-plan.md)。
 
 ## 本轮已完成
 
@@ -30,6 +30,7 @@
 | 现有 `npm run test` | 原有 APNG、画布文档、分组、快捷操作、素材顺序、拼接及 SQLite 迁移检查通过。 |
 | `npm run lint` 与类型检查 | 通过；生产构建也包含 TypeScript 检查。 |
 | `npm run test:ai` | 18 项通过：9 项服务端/旧库迁移测试、7 项客户端恢复/去重/停止测试、2 项来源校验测试。覆盖旧记录保留、多会话上下文/归属隔离、空会话复用和请求恢复；已加入 `npm run check`。 |
+| `node scripts/check-ai-ui.mjs` | 独立验证 assistant-ui 运行时和输入框能在 React 服务端渲染。 |
 | 会话交互浏览器与 HTTP | 离线通过当前画布范围、标题及历史行两处改名、历史搜索、切换后刷新恢复、消息左右布局、鼠标悬停操作、放大与原宽度还原、新建空会话去重，以及会话创建/搜索/改名接口；没有新的模型调用。 |
 | `node --no-warnings --experimental-strip-types scripts/verify-ai-chat-browser.mjs` | 已安装 Chromium Headless Shell 驱动真实页面，通过离线流式显示、停止、刷新恢复、折叠/展开、配置说明窗口、侧栏不溢出检查；无浏览器未捕获异常，无重复运行。 |
 | `node --env-file-if-exists=.env.local --no-warnings --experimental-strip-types scripts/verify-ai-chat-browser.mjs --live` | 一次真实浏览器发送“请只回复：连接成功”，正式独立工作进程调用 DeepSeek 后完成；刷新恢复、折叠与设置窗口通过，数据库只有 1 条运行。此命令会产生 API 费用，不能自动重跑。 |

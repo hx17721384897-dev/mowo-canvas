@@ -2,7 +2,7 @@
 
 以下内容尚未确认，不属于最终需求。
 
-视频下载精简首版已确认，见[下载 PRD](features/video-download.md)；延期能力不作为未决阻塞项，见[后续清单](../design/video-download-backlog.md)。分镜与片段编辑讨论仍见[视频工作流](features/video-workflow-discussion.md)。
+视频下载现行边界见[下载 PRD](features/video-download.md)和[后续清单](../design/video-download-backlog.md)。分镜、片段编辑和仍待规划的画面构图见[视频编辑 PRD](features/video-editor.md)。
 
 | 优先级 | ID | 问题 | 影响 |
 |---|---|---|---|

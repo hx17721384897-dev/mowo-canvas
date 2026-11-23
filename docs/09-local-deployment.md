@@ -59,6 +59,12 @@ npm run check
 
 Docker、开机启动器和桌面封装延后到本地功能稳定后评估。
 
+## AI 对话配置
+
+在本机仓库根目录的 `.env.local` 设置服务端变量 `DEEPSEEK_API_KEY`。使用 DeepSeek API 平台签发的密钥和 API 账户余额。密钥仅保存在服务端本地配置，使用 `DEEPSEEK_API_KEY` 原名，避免加入 `NEXT_PUBLIC_` 前缀。
+
+在项目根目录运行 `node --env-file-if-exists=.env.local scripts/check-deepseek.mjs` 检查配置是否存在。该方式不请求供应商，也不验证鉴权。需要验证实际鉴权时，在用户明确授权后加 `--live`，会发起一次可能计费的短文本请求。流式对话的现行验证见 [V1 实施进度](ai/v1-progress.md)。
+
 ## LINE 网络与代理
 
 Windows 上默认读取系统设置中已经启用的 HTTP 代理。使用 v2rayN 时，只要“设置系统代理”已开启且对应端口可连接，一般不需要额外配置。

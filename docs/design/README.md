@@ -18,13 +18,13 @@
 
 - [Concat 时间轴参考与简化改造记录](video-cutting-concat-reference.md)：记录参考项目 UI、手势、代码分层、MOWO 取舍及实际验收流程。
 
-- [资产栏按来源整理 V01](asset-source-view-v01.md)：**当前最新设计，首版开发中**。记录来源批次、手动文件夹、原始素材与多源产物的展示规则；无配套截图。
+- [资产栏按来源整理 V01](asset-source-view-v01.md)：**首版代码已接入，待浏览器和旧项目验收**。记录来源批次、手动文件夹、原始素材与多源产物的展示规则。
 
-- [视频编辑页技术设计](video-editor-architecture.md)：**当前候选，待用户确认，尚未实现**。与[视频观察 PRD 候选](../requirements/features/video-editor.md)对应，覆盖专业时间轴、源帧定位和后台任务衔接。
+- [视频编辑页技术设计](video-editor-architecture.md)：**现行技术边界**，覆盖时间轴、源帧定位和分镜任务。已接入范围与尚待验证项可从[视频编辑 PRD](../requirements/features/video-editor.md)进入。
 
 - [B 站视频下载与入库 V01 设计书](video-download-v01.md)：**精简首版 A—D 已完成实现与交付验证，待用户体验验收**。证据见[实施进度](video-download-progress.md)，环境/许可见[运行材料](video-runtime-notices.md)，按需增强见[后续清单](video-download-backlog.md)。
 
-- [图片裁切 V01 界面候选](prototypes/image-crop-v01-candidate.md)：**当前最新候选，待用户确认，尚未实现**。涵盖网格设置、裁切结果卡片与单张调整窗口。
+- [图片裁切 V01 设计](prototypes/image-crop-v01-candidate.md)：**已确认并接入**。涵盖网格设置、裁切结果卡片与单张调整窗口。
 
 - [对话输入操作栏 V01](prototypes/chat-composer-v01-preview.md)：**当前最新候选**，功能菜单仅上传文件；文件当前为本地预览，其他模式/模型能力尚未接入。
 

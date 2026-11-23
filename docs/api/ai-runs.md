@@ -1,6 +1,6 @@
 # AI 对话运行接口
 
-2026-11-06：V1 后端与右侧基础对话 UI 已接入并完成一次真实浏览器联调，正式密钥写入与模型切换尚未实现。业务范围以 [Agent 计划](../ai/agent-implementation-plan.md) 为准，验证证据见 [V1 进度](../ai/v1-progress.md)。
+本页记录当前接口和后台运行约束。用户行为见[设置与模型需求](../requirements/features/settings-and-models.md)，验证证据见 [V1 进度](../ai/v1-progress.md)。
 
 ## 创建与查询
 
@@ -58,4 +58,4 @@ HTTP 错误返回 `{code,error}`，不泄露密钥、请求头、堆栈或供应
 
 核心：`src/features/ai/server/run-store.ts`；调度：`run-service.ts`；供应商执行：`scripts/ai-run-worker.ts`；迁移：`drizzle/0004_flat_fixer.sql`。实际生产工作进程依赖项目内 TS 源文件与 scripts 目录，本地运行须保留源码，不能仅复制 .next 目录。
 
-18 项 AI 核心/客户端/来源校验测试、真实 HTTP 离线集成与浏览器会话交互检查已通过，包含旧库迁移、当前画布会话范围、改名/搜索/切换、布局与放大/还原。正式界面到真实 DeepSeek 的成功链路此前通过一次短请求验证；会话交互迭代没有新增付费调用。真实进程强杀后的租约过期、超时及错误分类的供应商实测仍待补充，不视为 V1 整体验收完成。
+测试命令、已验证范围与尚待验证的生产执行场景统一记录在 [V1 进度](../ai/v1-progress.md)。

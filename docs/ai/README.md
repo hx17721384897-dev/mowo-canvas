@@ -1,38 +1,7 @@
-# AI 与 Agent 接入工作区
+# AI 与 Agent 接入
 
-这里集中记录 Agent 接入的想法、供应商资料和待确认问题。产品需求确认后同步到[设置与模型需求](../requirements/features/settings-and-models.md)。本产品的接口契约仍归 [API 文档](../api/README.md) 管理。
-
-## 已确认方向
-
-- 基础文字对话已接入 DeepSeek Flash；当前模型与验证范围见 V1 实施进度，后续模型切换随设置界面完善。
-- 目标侧栏能力包括对话、联网搜索、使用 Skill、通过 @ 引用画布资产、接入图像模型，并将生成图片直接加入画布。用户接受分版本实现。
-
-## 实施计划
-
-当前执行分工与准备状态见 [阶段 0 清单](stage-0-checklist.md)。
-
-正式对话后端和右侧基础对话的交付范围、验证证据与剩余工作见 [V1 实施进度](v1-progress.md)，接口以 [AI 运行接口](../api/ai-runs.md) 为准。
-
-当前计划书已获用户确认，是本目录唯一实施依据，详细步骤、设计与验收见 [MOWO Agent 实施计划](agent-implementation-plan.md)。供应商、依赖和密钥方案在阶段 0 验证。
-
-1. 模型设置、服务端 DeepSeek 调用、流式对话、停止与历史记录。
-2. 图像供应商任务、结果下载、资产入库与画布放置。
-3. @ 资产引用，明确文字、元数据和实际图像内容的发送范围。
-4. 搜索工具与带来源的结果。
-5. Skill 规则与受控的画布工具调用，具体场景在后续版本讨论。
-
-候选方案为现有侧栏外壳加 assistant-ui、AI SDK 与项目业务后端。具体供应商、依赖版本、视觉能力和授权范围需要验证后确定。
-
-## 待讨论
-
-- 近期优先基础对话与生图；@ 动图后拆帧等操作类任务延后。近期需确认生图供应商与参数入口。
-- 阶段 0 确定具体模型、依赖版本与密钥存储实现。
-- V3 实施前确定允许外发的素材范围和具体数量、体积及像素上限。
-
-## DeepSeek 资料
-
-[DeepSeek 官方 API 接入笔记](deepseek-api-notes.md)记录 2026-11-05 阅读结果、来源及待验证事项。
-
-[Agent 侧栏学习资料](sidebar-learning-resources.md)收集开源项目、官方教程与视频参考。
-
-后续资料继续记录原始链接、核对日期及验证状态。示例只使用占位密钥。
+- [设置与模型需求](../requirements/features/settings-and-models.md)说明当前功能和已确认范围。
+- [V1 实施进度](v1-progress.md)记录已接入的会话、运行与侧栏行为，以及验证证据。接口见 [AI 运行接口](../api/ai-runs.md)。
+- [本地 AI 对话配置](../09-local-deployment.md#ai-对话配置)说明密钥、连接检查和计费提示。
+- [分阶段实施路线](agent-implementation-plan.md)说明 V1 后续设置，以及生图、资产引用、搜索和 Skill 的分期安排。
+- [DeepSeek 接入笔记](deepseek-api-notes.md)与[侧栏学习资料](sidebar-learning-resources.md)按需查阅。
