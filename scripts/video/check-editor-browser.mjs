@@ -59,6 +59,9 @@ export async function checkEditorBrowser(base, projectId, assetId, root, composi
     const tabs = await (await fetch(`http://127.0.0.1:${port}/json/list`)).json();
     await connect(tabs.find(tab => tab.type === 'page').webSocketDebuggerUrl);
     if (process.argv.includes('--cutting-step-five')) await cdp('Runtime.enable');
+    if (process.argv.includes('--cutting-step-three')) {
+      await cdp('Emulation.setDeviceMetricsOverride', { width: 1280, height: 800, deviceScaleFactor: 1, mobile: false });
+    }
     await cdp('Page.navigate', { url: `${base}/video-editor/${projectId}/${assetId}` });
     await until(`document.body?.textContent.includes('已索引 301 帧')`);
     if (['--cutting-step-one', '--cutting-step-two', '--cutting-step-three', '--cutting-step-four', '--cutting-playback-modes']
@@ -167,11 +170,36 @@ export async function checkEditorBrowser(base, projectId, assetId, root, composi
       return;
     }
     if (process.argv.includes('--cutting-step-three')) {
-      await cdp('Emulation.setDeviceMetricsOverride', { width: 1280, height: 800, deviceScaleFactor: 1, mobile: false });
       await until(`document.querySelector('[aria-label="视频编辑区"] [aria-pressed]')?.textContent.includes('源帧 0–300')`);
       await until(`Array.from(document.querySelectorAll('[aria-label="视频编辑区"] img')).some(image=>image.naturalWidth>0)`);
+      const viewportSize = `(() => {
+        const viewport = document.querySelector('[class*="cuttingViewport"]');
+        const track = viewport.firstElementChild;
+        const right = track.getBoundingClientRect().right;
+        const overflow = Array.from(track.querySelectorAll('*')).map(element => ({
+          className: element.className,
+          pixels: Math.round(element.getBoundingClientRect().right - right),
+        })).filter(item => item.pixels > 0).sort((a, b) => b.pixels - a.pixels).slice(0, 4);
+        return { viewport: viewport.clientWidth, content: viewport.scrollWidth, track: track.clientWidth, overflow };
+      })()`;
+      const fitted = `(() => {
+        const { viewport, content } = ${viewportSize};
+        return viewport > 0 && content <= viewport + 3;
+      })()`;
+      try {
+        await until(fitted, 5000);
+      } catch (error) {
+        console.error('Cutting fit dimensions:', await evaluate(viewportSize));
+        throw error;
+      }
+      const beforeZoom = await evaluate(viewportSize);
       await evaluate(`document.querySelector('[aria-label="放大剪辑时间轴"]').click()`);
-      await until(`document.querySelector('[class*="cuttingViewport"]').scrollWidth>document.querySelector('[class*="cuttingViewport"]').clientWidth+100`);
+      try {
+        await until(`${viewportSize}.content >= ${beforeZoom.viewport} * 1.4`, 5000);
+      } catch (error) {
+        console.error('Cutting zoom dimensions:', { before: beforeZoom, after: await evaluate(viewportSize) });
+        throw error;
+      }
       await evaluate(`Array.from(document.querySelectorAll('[aria-label="视频编辑区"] button')).find(b=>b.textContent==='适应全片').click()`);
       await until(`document.querySelector('[class*="cuttingViewport"]').scrollWidth<=document.querySelector('[class*="cuttingViewport"]').clientWidth+3`);
       await evaluate(`(() => {document.querySelector('video').currentTime=150;document.querySelector('[aria-label="视频编辑区"] [aria-pressed]').click();})()`);

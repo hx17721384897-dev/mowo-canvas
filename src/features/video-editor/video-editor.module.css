@@ -62,7 +62,7 @@
 .cuttingZoom small { color: #9eacc0; }
 .cuttingViewport { width: 100%; overflow-x: auto; overflow-y: hidden; margin-top: 6px; scrollbar-color: #7087a4 #202936; }
 .cuttingTrack { position: relative; height: 148px; user-select: none; }
-.cuttingRuler { position: relative; display: block; width: 100%; height: 26px; padding: 0; border: 0; background: #1a2029; color: #aebbd0; text-align: left; cursor: crosshair; touch-action: none; }
+.cuttingRuler { position: relative; display: block; width: 100%; height: 26px; overflow: clip; padding: 0; border: 0; background: #1a2029; color: #aebbd0; text-align: left; cursor: crosshair; touch-action: none; }
 .cuttingTick { position: absolute; top: 5px; height: 20px; padding-left: 4px; border-left: 1px solid #68758b; white-space: nowrap; font-size: 11px; pointer-events: none; }
 .cuttingClips { position: relative; width: 100%; height: 94px; background: repeating-linear-gradient(90deg, #202b39 0, #202b39 1px, #18212c 1px, #18212c 96px); }
 .cuttingClip { position: absolute; top: 7px; height: 80px; min-width: 0; overflow: visible; border: 1px solid #5a9cb6; border-radius: 4px; background: #1e3f57; color: #eef9fd; }
